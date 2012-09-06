@@ -48,21 +48,21 @@ function Invoke-Pest($ScriptBlock)
 function Invoke-PestOnScript($Script)
 {
     Invoke-Pest { 
-        & $PestPath (Join-Path $FixturesDir "Fixture-$Script.ps1" )
+        & $PestPath (Join-Path $FixturesDir "Fixture-$Script.ps1" ) -PassThru
     }
 }
 
 function Invoke-PestOnTest($Script, $Test)
 {
     Invoke-Pest {
-        & $PestPath (Join-Path $FixturesDir "Fixture-$Script.ps1") -Test $Test
+        & $PestPath (Join-Path $FixturesDir "Fixture-$Script.ps1") -Test $Test -PassThru
     }
 }
 
 function Invoke-PestOnPath($Path)
 {
     Invoke-Pest {
-        & $PestPath -Path $Path
+        & $PestPath -Path $Path -PassThru
     }
 }
 
@@ -70,26 +70,34 @@ function Test-ShouldRunTestsInFile
 {
     $result = Invoke-PestOnScript Script
     Assert-LastProcessSucceeded 'pest failed'
-    Assert-Equal '# Fixture-Script #' $result[0] "Didnt' output test fixture header."
-    Assert-Equal 'Test-One' $result[1] "Didn't output test one name."
-    Assert-Equal 'Test-Two' $result[2] "Didn't output test two name."
-    Assert-Report $result[3] -Total 2
+    #Assert-Equal '# Fixture-Script #' $result[0] "Didnt' output test fixture header."
+    Assert-Equal 'Test-One' $result[0].Name "Didn't output test one name."
+    Assert-True $result[0].Passed
+    Assert-Equal 'Fixture-Script' $result[0].Fixture
+    Assert-Null $result[0].Failure
+    Assert-Null $result[0].Exception
+    Assert-NotNull $result[0].Duration
+    
+    Assert-Equal 'Test-Two' $result[1].Name "Didn't output test two name."
+    Assert-True $result[1].Passed
+    Assert-Equal 'Fixture-Script' $result[1].Fixture
+    Assert-Null $result[1].Failure
+    Assert-Null $result[1].Exception
+    Assert-NotNull $result[1].Duration
 }
 
 function Test-ShouldRunJustOneTestInFile
 {
     $result = Invoke-PestOnTest Script -Test One
     Assert-LastProcessSucceeded 'pest failed'
-    Assert-Equal '# Fixture-Script #' $result[0] "Didnt' output test fixture header."
-    Assert-Equal 'Test-One' $result[1] "Didn't output test name."
-    Assert-Report $result[2] -Total 1 
+    Assert-Equal 'Test-One' $result.Name
 }
 
 function Test-ShouldOnlyRunsFunctionsThatBeginWithTest
 {
     $result = Invoke-PestOnScript ScriptWithNoTestFunctions
     Assert-LastProcessSucceeded 'pest failed'
-    Assert-Report $result[1]
+    Assert-Null $result
 }
 
 function Test-ShouldRunSetup
@@ -108,8 +116,7 @@ function Test-ShouldHandleEmptyTestFixture
 {
     $result = Invoke-PestOnScript Empty
     Assert-LastProcessSucceeded 'pest failed'
-    Assert-Equal '# Fixture-Empty #' $result[0] 'header not output'
-    Assert-Report $result[1] 
+    Assert-Null $result
 }
 
 function Test-ShouldHandleSyntaxErrors
@@ -129,11 +136,11 @@ function Test-ShouldRunAllTestsUnderAPath
     $path = JOin-path $FixturesDir FixturesForPath
     $result = Invoke-PestOnPath $path
     Assert-LastProcessSucceeded 'pest failed'
-    $expectedLines = @( '# Test-One #', 'Test-One', '# Test-Two #', 'Test-Two' )
-    for( $idx = 0; $idx -lt $expectedLines.Count; ++$idx )
-    {
-        Assert-Equal $expectedLines[$idx] $result[$idx] "Unexpected oUtput at line $idx."
-    }
+    Assert-Equal 2 $result.Count
+    Assert-Equal 'Test-One' $result[0].Fixture
+    Assert-Equal 'Test-One' $result[0].Name
+    Assert-Equal 'Test-Two' $result[1].Fixture
+    Assert-Equal 'Test-Two' $result[1].Name
 }
 
 function Test-ShouldHandleNoFilesToTestUnderPath
@@ -141,7 +148,7 @@ function Test-ShouldHandleNoFilesToTestUnderPath
     $path = Join-Path $FixturesDir NoTestsHere
     $result = Invoke-PestOnPath $path
     Assert-LastProcessSucceeded 'pest failed'
-    Assert-Report $result
+    Assert-Null $result
 }
 
 function Test-ShouldContinueRunningTestsIfTearDownFails
@@ -151,27 +158,31 @@ function Test-ShouldContinueRunningTestsIfTearDownFails
         $result = Invoke-PestOnScript TearDownFails
     }
     catch { }
-    Assert-Equal 4 $result.Length "Not all tests run when teardown fails."
-    Assert-Equal '# Fixture-TearDownFails #' $result[0] 'test header not output'
-    Assert-Equal 'Test-DoNothing' $result[1] 'didn''t run first test'
-    Assert-Equal 'Test-DoNothingToo' $result[2] 'didn''t run second test'
-    Assert-Report $result[3] -Total 2 
+    Assert-Equal 2 $result.Length "Not all tests run when teardown fails."
+    
+    Assert-Equal 'Test-DoNothing' $result[0].Name
+    Assert-Equal 'Fixture-TearDownFails' $result[0].Fixture
+    Assert-True $result[0].Passed
+    
+    Assert-Equal 'Test-DoNothingToo' $result[1].Name
+    Assert-Equal 'Fixture-TearDownFails' $result[1].Fixture
+    Assert-True $result[1].Passed
 }
 
 function Test-ShouldReportIgnoredTests
 {
     $result = Invoke-PestOnScript IgnoredTests
     Assert-LastPRocessSucceeded 'pest failed'
-    Assert-Equal 2 $result.Length 'Ignored tests run.'
-    Assert-Like $result[1] -Ignored 1
+    Assert-Null $result
 }
 
 function Test-ShouldExplicitlyRunIgnoredTest
 {
     $result = Invoke-PestOnTest IgnoredTests DoNothing
     Assert-LastProcessSucceeded 'pest failed'
-    Assert-Equal 3 $result.Length 'Ignored test not explicitly run.'
-    Assert-Equal 'Ignore-DoNothing' $result[1] 'Ignored test not run'
+    Assert-Equal 'Fixture-IgnoredTests' $result.Fixture
+    Assert-Equal 'Ignore-DoNothing' $result.Name
+    Assert-True $result.Passed
 }
 
 function Test-ShouldReportFailedTests
@@ -179,9 +190,9 @@ function Test-ShouldReportFailedTests
     $result = Invoke-PestOnScript FailingTest
     Assert-LastProcessFailed 'pest succeeded'
     Assert-Equal -1 $LastExitCode 'Pest didn''t output error code representing number of failing tests.'
-    Assert-Equal 3 $result.Length 'Didn''t run test.'
-    Assert-Equal 'Test-ShouldFail' $result[1] 'test not run'
-    Assert-Report $result[2] -Total 1 -Failures 1
+    Assert-NotNull $result
+    Assert-NotNull $result.Failure
+    Assert-Like $result.failure '*Test-ShouldFail*'
 }
 
 function Test-ShouldReportMultipleFailedTests
@@ -189,7 +200,8 @@ function Test-ShouldReportMultipleFailedTests
     $result = Invoke-PestOnScript MultipleFailingTests
     Assert-LastProcessFailed 'pest succeeded'
     Assert-Equal -3 $LastExitCode 'Pest didn''t output error code representing number of failing tests.'
-    Assert-Report $result[4] -Total 3 -Failures 3
+    Assert-Equal 3 $result.Count
+    $result | ForEach-Object { Assert-NotNull $_.Failure }
 }
 
 function Test-ShouldReturnFailedExitCodeWhenErrorsEncountered
@@ -197,9 +209,10 @@ function Test-ShouldReturnFailedExitCodeWhenErrorsEncountered
     $result = Invoke-PestOnScript TestWithError
     Assert-LastProcessFailed 'pest succeeded'
     Assert-Equal 1 $LastExitCode 'Pest didn''t output error code representing number of test with errors.'
-    Assert-Equal 3 $result.Length 'Didn''t run test.'
-    Assert-Equal 'Test-ShouldHaveError' $result[1] 'test not run'
-    Assert-Report $result[2] -Total 1 -Errors 1
+    Assert-NotNull $result
+    Assert-NotNull $result.Exception
+    Assert-Like $result.Exception '*I failed*'
+    Assert-Equal 'Test-ShouldHaveError' $result.Name
 }
 
 function Test-ShouldReportMultipleTestsWithErrors
@@ -207,20 +220,15 @@ function Test-ShouldReportMultipleTestsWithErrors
     $result = Invoke-PestOnScript WithMultipleErrors
     Assert-LastProcessFailed 'pest succeeded'
     Assert-Equal 3 $LastExitCode 'Pest didn''t output error code representing number of failing tests.'
-    Assert-Report $result[4] -Total 3 -Errors 3
+    Assert-Equal 3 $result.Count
+    $result | ForEach-Object { Assert-NotNull $_.Exception }
 }
 
 function Test-ShouldSupportOptionalFixture
 {
     $result = Invoke-PestOnScript WithConditionalTests
     Assert-LastProcessSucceeded 'pest failed'
-    Assert-Equal 0 $LastExitCode
-    Assert-Report $result[1]
-}
-
-function Assert-Report($Report, $Total = 0, $Failures = 0, $Errors = 0, $Ignored = 0)
-{
-    Assert-Match $Report "Ran $Total test\(s\) with $Failures failure\(s\), $Errors error\(s\), and $Ignored ignored in \d+(\.\d+)? second\(s\)." "Didn't get expected output summary."
+    Assert-Null $result
 }
 
 

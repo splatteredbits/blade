@@ -171,8 +171,13 @@ function Invoke-Test($fixture, $function)
         }
         else
         {
+            $innerException = $_.Exception
+            while( $innerException.InnerException )
+            {
+                $innerException = $innerException.InnerException
+            }
             $testInfo.Passed = $false
-            $testInfo.Exception = $_.Exception
+            $testInfo.Exception = "{0}: {1}{2}" -f $innerException.GetType().FullName,$innerException.Message,$error[0].InvocationInfo.PositionMessage
         }
     }
     finally

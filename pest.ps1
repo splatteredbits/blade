@@ -133,6 +133,7 @@ function Invoke-Test($fixture, $function)
                             Failure = $null;
                             Exception = $null; 
                             Duration = $null; 
+                            PipelineOutput = @();
                         }
     
     $testInfo = New-Object PsObject -Property $testProperties
@@ -149,7 +150,11 @@ function Invoke-Test($fixture, $function)
         if( Test-Path function:$function )
         {
             $testInfo.Passed = $true
-            . $function | Write-Verbose
+            $output = . $function
+            if( $output )
+            {
+                $testInfo.PipelineOutput = $output
+            }
         }
     }
     catch [Pest.AssertionException]

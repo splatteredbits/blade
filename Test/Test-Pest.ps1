@@ -231,6 +231,14 @@ function Test-ShouldSupportOptionalFixture
     Assert-Null $result
 }
 
+function Test-NewTempDirectoryTree
+{
+    $result = Invoke-PestOnPath -Path (Join-Path $PSScriptRoot 'Test-NewTempDirectoryTree.ps1')
+    Assert-LastProcessSucceeded 'New-TempDirectoryTree tests failed'
+    Assert-NotNull $result
+    $result | ForEach-Object { Assert-True $_.Passed }
+}
+
 
 Write-Output "# Test-Pest #"
 $testsFailed = 0

@@ -414,14 +414,6 @@ function Set-TestVerbosity($verbosity)
     $Script:VerbosePreference = $verbosity
 }
 
-function New-TempDir
-{
-    <#
-    .SYNOPSIS
-    Creates a new temporary directory.
-    #>
-    $tmpPath = [System.IO.Path]::GetTempPath()
-    $newTmpDirName = [System.IO.Path]::GetRandomFileName()
-    New-Item (Join-Path $tmpPath $newTmpDirName) -Type Directory
-}
 
+Get-Item -Path (Join-Path $PSScriptRoot *-*.ps1) | 
+    ForEach-Object { . $_.FullName }

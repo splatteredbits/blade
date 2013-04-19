@@ -417,3 +417,5 @@ function Set-TestVerbosity($verbosity)
 
 Get-Item -Path (Join-Path $PSScriptRoot *-*.ps1) | 
     ForEach-Object { . $_.FullName }
+
+Export-ModuleMember -Function * -Alias *

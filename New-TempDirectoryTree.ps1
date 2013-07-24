@@ -1,7 +1,7 @@
 
 function New-TempDirectoryTree
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='TempPath')]
     param(
         [Parameter(Mandatory=$true)]
         [AllowEmptyString()]
@@ -9,20 +9,37 @@ function New-TempDirectoryTree
         # The directory tree to create.
         $Tree,
         
+        [Parameter(ParameterSetName='TempPath')]
         [string]
         # An optional prefix for the temporary directory's name.
-        $Prefix
+        $Prefix,
+
+        [Parameter(Mandatory=$true,ParameterSetName='ExistingPath')]
+        [string]
+        # The path where the directory tree should be created.  Defaults to a new directory in the `$env:TEMP` directory.
+        $Path
     )
     
     $stackName = 'New-TempDirectoryTree'
     
-    $optionalParams = @{ }
-    if( $Prefix )
+    if( $PSCmdlet.ParameterSetName -eq 'TempPath' )
     {
-        $optionalParams.Prefix = $Prefix
-    }
+        $optionalParams = @{ }
+        if( $Prefix )
+        {
+            $optionalParams.Prefix = $Prefix
+        }
     
-    $tempDir = New-TempDirectory @optionalParams
+        $tempDir = New-TempDirectory @optionalParams
+    }
+    else
+    {
+        if( -not (Test-Path -Path $Path -PathType Container) )
+        {
+            New-Item -Path $Path -ItemType Directory -Force
+        }
+        $tempDir = $Path
+    }
     $startLocation = Get-Location
     Push-Location -Path $tempDir -StackName $stackName
     

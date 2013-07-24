@@ -3,7 +3,7 @@ function New-TempDirectoryTree
 {
     [CmdletBinding(DefaultParameterSetName='TempPath')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true,Position=1)]
         [AllowEmptyString()]
         [string]
         # The directory tree to create.

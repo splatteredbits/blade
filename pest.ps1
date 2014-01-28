@@ -42,9 +42,9 @@ param(
     # The paths to search for tests.  All files matching Test-*.ps1 will be run.
     $Path,
     
-    [string]
+    [string[]]
     # The individual test in the script to run.  Defaults to all tests.
-    $Test = $null,
+    $Test,
     
     [Switch]
     # Return objects for each test run.
@@ -260,16 +260,27 @@ $testScripts |
         
         $testModuleName =  [System.IO.Path]::GetFileNameWithoutExtension($testCase)
 
-        $functions = Get-FunctionsInFile $testCase.FullName
-        
-        if( $functions -contains "Test-$Test" )
-        {
-            $functions = @( "Test-$Test" )
-        }
-        elseif( $functions -contains "Ignore-$Test" )
-        {
-            $functions = @( "Ignore-$Test" )
-        }
+        $functions = Get-FunctionsInFile $testCase.FullName |
+                        Where-Object { $_ -match '^(Test|Ignore)-(.*)$' } |
+                        Where-Object { 
+                            if( $PSBoundParameters.ContainsKey('Test') )
+                            {
+                                return $Test | Where-Object { $Matches[2] -like $_ } 
+                            }
+
+                            if( $Matches[1] -eq 'Ignore' )
+                            {
+                                Write-Warning ("Skipping ignored test '{0}'." -f $_)
+                                $testsIgnored++
+                                return $false
+                            }
+
+                            return $true
+                        }
+        @('Start-TestFixture','Start-Test','Setup','TearDown','Stop-Test','Stop-TestFixture') |
+            ForEach-Object { Join-Path -Path 'function:' -ChildPath $_ } |
+            Where-Object { Test-Path -Path $_ } |
+            Remove-Item
         
         . $testCase.FullName
         try
@@ -283,20 +294,6 @@ $testScripts |
             {
 
                 if( -not (Test-Path function:$function) )
-                {
-                    continue
-                }
-                
-                if( $function -like 'Ignore-*' )
-                {
-                    if( $function -ne "Ignore-$Test" )
-                    {
-                        Write-Warning "Skipping ignored test '$function'."
-                        $testsIgnored++
-                        continue
-                    }
-                }
-                elseif( $function -notlike 'Test-*' )
                 {
                     continue
                 }

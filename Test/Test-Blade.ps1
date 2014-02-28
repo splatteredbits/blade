@@ -1,8 +1,6 @@
 <#
-
 .SYNOPSIS 
-
-Tests the pest script.
+Tests the blade script.
 #>
 [CmdletBinding()]
 param(
@@ -14,8 +12,8 @@ $PSScript = $myInvocation.MyCommand.Definition
 $PSScriptRoot = Split-Path $PSScript
 
 $FixturesDir = Join-Path $PSScriptRoot Fixtures
-$PestPath = Join-Path $PSScriptRoot ..\pest.ps1
-$markerPath = Join-Path $env:TEMP Test-Pest.marker
+$BladePath = Join-Path $PSScriptRoot ..\blade.ps1
+$markerPath = Join-Path $env:TEMP Test-Blade.marker
 
 function Setup
 {
@@ -32,7 +30,7 @@ function TearDown
 {
 }
 
-function Invoke-Pest($ScriptBlock)
+function Invoke-Blade($ScriptBlock)
 {
     try
     {
@@ -45,31 +43,31 @@ function Invoke-Pest($ScriptBlock)
     }
 }
 
-function Invoke-PestOnScript($Script)
+function Invoke-BladeOnScript($Script)
 {
-    Invoke-Pest { 
-        & $PestPath (Join-Path $FixturesDir "Fixture-$Script.ps1" ) -PassThru
+    Invoke-Blade { 
+        & $BladePath (Join-Path $FixturesDir "Fixture-$Script.ps1" ) -PassThru
     }
 }
 
-function Invoke-PestOnTest($Script, $Test)
+function Invoke-BladeOnTest($Script, $Test)
 {
-    Invoke-Pest {
-        & $PestPath (Join-Path $FixturesDir "Fixture-$Script.ps1") -Test $Test -PassThru
+    Invoke-Blade {
+        & $BladePath (Join-Path $FixturesDir "Fixture-$Script.ps1") -Test $Test -PassThru
     }
 }
 
-function Invoke-PestOnPath($Path)
+function Invoke-BladeOnPath($Path)
 {
-    Invoke-Pest {
-        & $PestPath -Path $Path -PassThru
+    Invoke-Blade {
+        & $BladePath -Path $Path -PassThru
     }
 }
 
 function Test-ShouldRunTestsInFile
 {
-    $result = Invoke-PestOnScript Script
-    Assert-LastProcessSucceeded 'pest failed'
+    $result = Invoke-BladeOnScript Script
+    Assert-LastProcessSucceeded 'blade failed'
     #Assert-Equal '# Fixture-Script #' $result[0] "Didnt' output test fixture header."
     Assert-Equal 'Test-One' $result[0].Name "Didn't output test one name."
     Assert-True $result[0].Passed
@@ -88,34 +86,34 @@ function Test-ShouldRunTestsInFile
 
 function Test-ShouldRunJustOneTestInFile
 {
-    $result = Invoke-PestOnTest Script -Test One
-    Assert-LastProcessSucceeded 'pest failed'
+    $result = Invoke-BladeOnTest Script -Test One
+    Assert-LastProcessSucceeded 'blade failed'
     Assert-Equal 'Test-One' $result.Name
 }
 
 function Test-ShouldOnlyRunsFunctionsThatBeginWithTest
 {
-    $result = Invoke-PestOnScript ScriptWithNoTestFunctions
-    Assert-LastProcessSucceeded 'pest failed'
+    $result = Invoke-BladeOnScript ScriptWithNoTestFunctions
+    Assert-LastProcessSucceeded 'blade failed'
     Assert-Null $result
 }
 
 function Test-ShouldRunSetup
 {
-    Invoke-PestOnScript SetupGetsRun
+    Invoke-BladeOnScript SetupGetsRun
     Assert-FileExists $markerPath
 }
 
 function Test-ShouldRunTearDown
 {
-    Invoke-PestOnScript TearDownGetsRun
+    Invoke-BladeOnScript TearDownGetsRun
     Assert-FileExists $markerPath
 }
 
 function Test-ShouldHandleEmptyTestFixture
 {
-    $result = Invoke-PestOnScript Empty
-    Assert-LastProcessSucceeded 'pest failed'
+    $result = Invoke-BladeOnScript Empty
+    Assert-LastProcessSucceeded 'blade failed'
     Assert-Null $result
 }
 
@@ -123,7 +121,7 @@ function Test-ShouldHandleSyntaxErrors
 {
     try
     {
-        $result = Invoke-PestOnScript SyntaxError
+        $result = Invoke-BladeOnScript SyntaxError
     }
     catch { }
     Assert-Equal 1 $error.Count 'Didn''t get expected errors.'
@@ -134,8 +132,8 @@ function Test-ShouldHandleSyntaxErrors
 function Test-ShouldRunAllTestsUnderAPath
 {
     $path = JOin-path $FixturesDir FixturesForPath
-    $result = Invoke-PestOnPath $path
-    Assert-LastProcessSucceeded 'pest failed'
+    $result = Invoke-BladeOnPath $path
+    Assert-LastProcessSucceeded 'blade failed'
     Assert-Equal 2 $result.Count
     Assert-Equal 'Test-One' $result[0].Fixture
     Assert-Equal 'Test-One' $result[0].Name
@@ -146,8 +144,8 @@ function Test-ShouldRunAllTestsUnderAPath
 function Test-ShouldHandleNoFilesToTestUnderPath
 {
     $path = Join-Path $FixturesDir NoTestsHere
-    $result = Invoke-PestOnPath $path
-    Assert-LastProcessSucceeded 'pest failed'
+    $result = Invoke-BladeOnPath $path
+    Assert-LastProcessSucceeded 'blade failed'
     Assert-Null $result
 }
 
@@ -155,7 +153,7 @@ function Test-ShouldContinueRunningTestsIfTearDownFails
 {
     try
     {
-        $result = Invoke-PestOnScript TearDownFails
+        $result = Invoke-BladeOnScript TearDownFails
     }
     catch { }
     Assert-Equal 2 $result.Length "Not all tests run when teardown fails."
@@ -171,15 +169,15 @@ function Test-ShouldContinueRunningTestsIfTearDownFails
 
 function Test-ShouldReportIgnoredTests
 {
-    $result = Invoke-PestOnScript IgnoredTests
-    Assert-LastPRocessSucceeded 'pest failed'
+    $result = Invoke-BladeOnScript IgnoredTests
+    Assert-LastPRocessSucceeded 'blade failed'
     Assert-Null $result
 }
 
 function Test-ShouldExplicitlyRunIgnoredTest
 {
-    $result = Invoke-PestOnTest IgnoredTests DoNothing
-    Assert-LastProcessSucceeded 'pest failed'
+    $result = Invoke-BladeOnTest IgnoredTests DoNothing
+    Assert-LastProcessSucceeded 'blade failed'
     Assert-Equal 'Fixture-IgnoredTests' $result.Fixture
     Assert-Equal 'Ignore-DoNothing' $result.Name
     Assert-True $result.Passed
@@ -187,9 +185,9 @@ function Test-ShouldExplicitlyRunIgnoredTest
 
 function Test-ShouldReportFailedTests
 {
-    $result = Invoke-PestOnScript FailingTest
-    Assert-LastProcessFailed 'pest succeeded'
-    Assert-Equal -1 $LastExitCode 'Pest didn''t output error code representing number of failing tests.'
+    $result = Invoke-BladeOnScript FailingTest
+    Assert-LastProcessFailed 'blade succeeded'
+    Assert-Equal -1 $LastExitCode 'Blade didn''t output error code representing number of failing tests.'
     Assert-NotNull $result
     Assert-NotNull $result.Failure
     Assert-Like $result.failure '*Test-ShouldFail*'
@@ -197,18 +195,18 @@ function Test-ShouldReportFailedTests
 
 function Test-ShouldReportMultipleFailedTests
 {
-    $result = Invoke-PestOnScript MultipleFailingTests
-    Assert-LastProcessFailed 'pest succeeded'
-    Assert-Equal -3 $LastExitCode 'Pest didn''t output error code representing number of failing tests.'
+    $result = Invoke-BladeOnScript MultipleFailingTests
+    Assert-LastProcessFailed 'blade succeeded'
+    Assert-Equal -3 $LastExitCode 'Blade didn''t output error code representing number of failing tests.'
     Assert-Equal 3 $result.Count
     $result | ForEach-Object { Assert-NotNull $_.Failure }
 }
 
 function Test-ShouldReturnFailedExitCodeWhenErrorsEncountered
 {
-    $result = Invoke-PestOnScript TestWithError
-    Assert-LastProcessFailed 'pest succeeded'
-    Assert-Equal 1 $LastExitCode 'Pest didn''t output error code representing number of test with errors.'
+    $result = Invoke-BladeOnScript TestWithError
+    Assert-LastProcessFailed 'blade succeeded'
+    Assert-Equal 1 $LastExitCode 'Blade didn''t output error code representing number of test with errors.'
     Assert-NotNull $result
     Assert-NotNull $result.Exception
     Assert-Like $result.Exception '*I failed*'
@@ -217,30 +215,30 @@ function Test-ShouldReturnFailedExitCodeWhenErrorsEncountered
 
 function Test-ShouldReportMultipleTestsWithErrors
 {
-    $result = Invoke-PestOnScript WithMultipleErrors
-    Assert-LastProcessFailed 'pest succeeded'
-    Assert-Equal 3 $LastExitCode 'Pest didn''t output error code representing number of failing tests.'
+    $result = Invoke-BladeOnScript WithMultipleErrors
+    Assert-LastProcessFailed 'blade succeeded'
+    Assert-Equal 3 $LastExitCode 'Blade didn''t output error code representing number of failing tests.'
     Assert-Equal 3 $result.Count
     $result | ForEach-Object { Assert-NotNull $_.Exception }
 }
 
 function Test-ShouldSupportOptionalFixture
 {
-    $result = Invoke-PestOnScript WithConditionalTests
-    Assert-LastProcessSucceeded 'pest failed'
+    $result = Invoke-BladeOnScript WithConditionalTests
+    Assert-LastProcessSucceeded 'blade failed'
     Assert-Null $result
 }
 
 function Test-NewTempDirectoryTree
 {
-    $result = Invoke-PestOnPath -Path (Join-Path $PSScriptRoot 'Test-NewTempDirectoryTree.ps1')
+    $result = Invoke-BladeOnPath -Path (Join-Path $PSScriptRoot 'Test-NewTempDirectoryTree.ps1')
     Assert-LastProcessSucceeded 'New-TempDirectoryTree tests failed'
     Assert-NotNull $result
     $result | ForEach-Object { Assert-True $_.Passed }
 }
 
 
-Write-Output "# Test-Pest #"
+Write-Output "# Test-Blade #"
 $testsFailed = 0
 $testErrors = 0
 $testCount = 0
@@ -261,7 +259,7 @@ foreach( $function in (Get-Item function:\Test-*) )
         {
             . $function | Write-Verbose
         }
-        catch [Pest.AssertionException] 
+        catch [Blade.AssertionException] 
         {
             $ex = $_.Exception
             $testsFailed++

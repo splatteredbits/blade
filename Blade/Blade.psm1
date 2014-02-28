@@ -1,26 +1,6 @@
 
 $currentTest = $null
 
-Add-Type @"
-namespace Pest
-{
-    public sealed class AssertionException : System.Exception
-    {
-        private string[] _psStackTrace;
-        
-        public AssertionException(string message, string[] psStackTrace) : base(message)
-        {
-            _psStackTrace = psStackTrace;
-        }
-
-        public string[] PSStackTrace 
-        { 
-            get { return _psStackTrace; }
-        }  
-    }
-}
-"@
-
 function Set-CurrentTest($currentTest)
 {
     $SCRIPT:currentTest = $currentTest
@@ -361,7 +341,7 @@ function Fail($message)
         $stackTrace +=  "$($item.ScriptName):$($item.ScriptLineNumber) $($invocationInfo.MyCommand)"
     }
 
-    $ex = New-Object 'Pest.AssertionException' $message,$stackTrace
+    $ex = New-Object 'Blade.AssertionException' $message,$stackTrace
     throw $ex
 }
 

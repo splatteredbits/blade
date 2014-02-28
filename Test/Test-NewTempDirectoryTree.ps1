@@ -1,6 +1,6 @@
 
 $tempDir = $null
-$prefixParam = @{ Prefix = 'Pest-Test-NewTempDirectoryTree' }
+$prefixParam = @{ Prefix = 'Blade-Test-NewTempDirectoryTree' }
 
 function Setup
 {

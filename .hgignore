@@ -1,0 +1,9 @@
+relre:.*\.orig
+glob:*.pdb
+glob:Source\obj
+glob:Source\**\obj
+glob:Source\Test\bin
+glob:Source\Test\obj
+glob:Source\*.suo
+glob:Source\*.user
+glob:Source\**\*.user

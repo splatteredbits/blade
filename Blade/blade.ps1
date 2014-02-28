@@ -1,37 +1,37 @@
 <#
-
 .SYNOPSIS
-
-Runs pest tests in a file or set of directories.
+Runs Blade tests in a file or set of directories.
 
 .DESCRIPTION
+Blade is a simple testing framework, inspired by NUnit.  It reads in all the files under a given path (or paths), and opens each file that matches the `Test-*` pattern.  It will then execute the tests in that file.  Blade tests are functions that that use the `Test` verb in their name, i.e. whose name match the `Test-*` pattern.
 
-Pest is a testing framework for PowerShell.  Test fixtures are defined in files
-that begin with "Test-".  Each test can have a Setup and Teardown function,
-which are run before each test.  Any method in a test fixture file that begins 
-with "Test-" is run.
+When executing the tests in a file, Blade does the following:
+
+ * Calls the `Start-TestFixture` function (if one is defined)
+ * Executes each test.  For each test, Blade calls the `Start-Test` function (if defined), followed by the test, followed by the `Stop-Test` function (if defined).
+ * Calls the `Stop-TestFixture` function (if one is defined)
 
 Output is captured and written to verbose output.
 
 .EXAMPLE
+.\blade Test-MyScript.ps1
+
+Will run all the tests in the `Test-MyScript.ps1` script.
 
 .EXAMPLE
+.\blade Test-MyScript.ps1 -Test MyTest
 
-.\pest Test-MyScript.ps1
-
-Will run all the tests Test-MyScript.ps1 script.
-
-.EXAMPLE
-
-.\pest Test-MyScript.ps1 -Test MyTest
-
-Will run the MyTest test in the MyScript test script.
+Will run the `MyTest` test in the `Test-MyScript.ps1` test script.
 
 .EXAMPLE
+blade .\MyModule
 
-pest .\MyModule
+Will run all tests in the files which match the `Test-*.ps1` wildcard in the .\MyModule directory.
 
-Will run all Test-*.ps1 scripts under the .\MyModule directory.
+.EXAMPLE
+blade .\MyModule -Recurse
+
+Will run all test in files which match the `Test-*.ps1` wildcard under the .\MyModule directory and its sub-directories.
 
 #>
 
@@ -55,25 +55,22 @@ param(
     $Recurse
 )
 
+#Requires -Version 3
 $ErrorActionPreference = 'Stop'
 
-$PSScriptRoot = Split-Path $myInvocation.MyCommand.Definition
-
-Write-Verbose "PSScriptRoot: $PSScriptRoot"
-
-Import-Module $PSScriptRoot -Force
+if( (Get-Module -Name 'Blade') )
+{
+    Remove-Module 'Blade'
+}
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Blade.psd1' -Resolve)
 
 $modules = @{ }
 Get-Module | % { $modules[$_.Name] = $true }
 
 Set-TestVerbosity $VerbosePreference
 
-function Exit-Pest($exitCode = 0)
+function Exit-Blade($exitCode = 0)
 {
-    if( (Get-Module Pest) -ne $null )
-    {
-        Remove-Module Pest
-    }
     exit($exitCode)
 }
 
@@ -91,7 +88,7 @@ function Get-FunctionsInFile($testScript)
     if( $errors -ne $null -and $errors.Count -gt 0 )
     {
         Write-Error "Found $($errors.count) error(s) parsing '$testScript'."
-        Exit-Pest -1 
+        Exit-Blade -1 
     }
     
     Write-Verbose "Found $($tokens.Count) tokens in '$testScript'."
@@ -178,7 +175,7 @@ function Invoke-Test($fixture, $function)
             . $function | ForEach-Object { $output += $_ }
         }
     }
-    catch [Pest.AssertionException]
+    catch [Blade.AssertionException]
     {
         $ex = $_.Exception
         $testInfo.Passed = $false
@@ -366,4 +363,4 @@ if( $testErrors -gt 0 )
 {
     $exitCode = $testErrors
 }
-Exit-Pest $exitCode
+Exit-Blade $exitCode

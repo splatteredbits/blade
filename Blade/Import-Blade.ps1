@@ -1,3 +1,17 @@
+<#
+.SYNOPSIS
+Imports the Blade module.
+
+.DESCRIPTION
+Normally, you shouldn't need to import Blade.  Usually, you'll just call the `blade.ps1` script directly and it will import Blade for you.
+
+If Blade is already imported, it will be removed and then re-imported.
+
+.EXAMPLE
+Import-Blade.ps1
+
+Demonstrates how to import the Blade module.
+#>
 [CmdletBinding(SupportsShouldProcess=$true)]
 param(
 )

@@ -1,8 +1,42 @@
 
-function Assert-IsNull($value, $message)
+function Assert-IsNull
 {
-    if( $value -ne $null )
+    <#
+    .SYNOPSIS
+    Asserts that an object/value is `$null`.
+
+    .DESCRIPTION
+    `Value` is literally compared with `$null`.
+
+    .EXAMPLE
+    Assert-IsNull $null
+
+    Demonstrates how to assert a value is equal to `$null`.
+
+    .EXAMPLE
+    Assert-IsNull '' 'Uh-oh.  Empty string is null.'
+
+    Demonstrates how to assert a value is equal to `$null` and show a custom error message.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Position=0)]
+        [object]
+        # The value to check.
+        $Value, 
+
+        [Parameter(Position=1)]
+        [string]
+        # The message to show when `Value` if not null.
+        $Message
+    )
+
+    Set-StrictMode -Version 'Latest'
+
+    if( $Value -ne $null )
     {
-        Fail "Value '$value' is not null: $message"
+        Fail "Value '$Value' is not null: $Message"
     }
 }
+
+Set-Alias -Name 'Assert-Null' -Value 'Assert-IsNull'

@@ -1,6 +1,26 @@
 
-function New-AssertionException($message)
+function New-AssertionException
 {
+    <#
+    .SYNOPSIS
+    Creates and throws a `Blade.AssertionException`, which fails a test.
+
+    .DESCRIPTION
+    All failed assertions call this function to report the failure.  This is Blade's `Fail` function.
+
+    ALIASES
+       
+     * Fail
+    #>
+    param(
+        [Parameter(Position=0)]
+        [string]
+        # The failure message.
+        $Message
+    )
+
+    Set-StrictMode -Version 'Latest'
+
     $scopeNum = 0
     $stackTrace = @()
     

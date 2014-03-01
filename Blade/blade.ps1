@@ -15,6 +15,9 @@ Blade will return `Blade.TestResult` objects for all failed tests and a final `B
 
 You can access the `Blade.RunResult` object from the last test run via the global `LASTBLADERESULT` variable.
 
+.LINK
+about_Blade
+
 .EXAMPLE
 .\blade Test-MyScript.ps1
 

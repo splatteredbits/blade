@@ -1,34 +1,6 @@
-<#
-.SYNOPSIS 
-Tests the blade script.
-#>
-[CmdletBinding()]
-param(
-    [alias("n")]
-    $TestName = $null
-)
-
-$PSScript = $myInvocation.MyCommand.Definition
-$PSScriptRoot = Split-Path $PSScript
-
 $FixturesDir = Join-Path $PSScriptRoot Fixtures
-$BladePath = Join-Path $PSScriptRoot ..\blade.ps1
+$BladePath = Join-Path $PSScriptRoot ..\Blade\blade.ps1 -Resolve
 $markerPath = Join-Path $env:TEMP Test-Blade.marker
-
-function Setup
-{
-    $PSScriptRoot = Split-Path $PSScript
-    Import-Module (Join-Path $PSScriptRoot .. -Resolve) -Force
-
-    if( Test-Path $markerPath )
-    {
-        Remove-Item $markerPath
-    }
-}
-
-function TearDown
-{
-}
 
 function Invoke-Blade($ScriptBlock)
 {
@@ -39,14 +11,19 @@ function Invoke-Blade($ScriptBlock)
 #    catch { }
     finally
     {
-        Import-Module (Resolve-Path (Join-Path $PSScriptRoot .. -Resolve))
+        & (Join-Path -Path $PSScriptRoot -ChildPath '..\Blade\Import-Blade.ps1' -Resolve)
     }
 }
 
-function Invoke-BladeOnScript($Script)
+function Invoke-BladeOnScript
 {
+    [CmdletBinding()]
+    param(
+        $Script
+    )
+
     Invoke-Blade { 
-        & $BladePath (Join-Path $FixturesDir "Fixture-$Script.ps1" ) -PassThru
+        & $BladePath (Join-Path $FixturesDir "Fixture-$Script.ps1" ) -PassThru -ErrorAction:$ErrorActionPreference
     }
 }
 
@@ -67,35 +44,34 @@ function Invoke-BladeOnPath($Path)
 function Test-ShouldRunTestsInFile
 {
     $result = Invoke-BladeOnScript Script
-    Assert-LastProcessSucceeded 'blade failed'
+    Assert-BladeSucceeded $result
     #Assert-Equal '# Fixture-Script #' $result[0] "Didnt' output test fixture header."
     Assert-Equal 'Test-One' $result[0].Name "Didn't output test one name."
     Assert-True $result[0].Passed
-    Assert-Equal 'Fixture-Script' $result[0].Fixture
+    Assert-Equal 'Fixture-Script' $result[0].FixtureName
     Assert-Null $result[0].Failure
-    Assert-Null $result[0].Exception
+    Assert-Null $result[0].Error
     Assert-NotNull $result[0].Duration
     
     Assert-Equal 'Test-Two' $result[1].Name "Didn't output test two name."
     Assert-True $result[1].Passed
-    Assert-Equal 'Fixture-Script' $result[1].Fixture
+    Assert-Equal 'Fixture-Script' $result[1].FixtureName
     Assert-Null $result[1].Failure
-    Assert-Null $result[1].Exception
+    Assert-Null $result[1].Error
     Assert-NotNull $result[1].Duration
 }
 
 function Test-ShouldRunJustOneTestInFile
 {
     $result = Invoke-BladeOnTest Script -Test One
-    Assert-LastProcessSucceeded 'blade failed'
-    Assert-Equal 'Test-One' $result.Name
+    Assert-BladeSucceeded $result
+    Assert-Equal 'Test-One' $result[0].Name
 }
 
 function Test-ShouldOnlyRunsFunctionsThatBeginWithTest
 {
     $result = Invoke-BladeOnScript ScriptWithNoTestFunctions
-    Assert-LastProcessSucceeded 'blade failed'
-    Assert-Null $result
+    Assert-BladeSucceeded $result
 }
 
 function Test-ShouldRunSetup
@@ -113,19 +89,18 @@ function Test-ShouldRunTearDown
 function Test-ShouldHandleEmptyTestFixture
 {
     $result = Invoke-BladeOnScript Empty
-    Assert-LastProcessSucceeded 'blade failed'
-    Assert-Null $result
+    Assert-BladeSucceeded $result
 }
 
 function Test-ShouldHandleSyntaxErrors
 {
     try
     {
-        $result = Invoke-BladeOnScript SyntaxError
+        $result = Invoke-BladeOnScript SyntaxError -ErrorAction SilentlyContinue
     }
     catch { }
-    Assert-Equal 1 $error.Count 'Didn''t get expected errors.'
-    Assert-Like $error[0] "Found 1 error(s) parsing" "didn't find paring errors"
+    Assert-Equal 1 $Error.Count 'Didn''t get expected errors.'
+    Assert-Like $error[0] "Found * error(s) parsing" "didn't find paring errors"
     $error.Clear()
 }
 
@@ -133,11 +108,11 @@ function Test-ShouldRunAllTestsUnderAPath
 {
     $path = JOin-path $FixturesDir FixturesForPath
     $result = Invoke-BladeOnPath $path
-    Assert-LastProcessSucceeded 'blade failed'
-    Assert-Equal 2 $result.Count
-    Assert-Equal 'Test-One' $result[0].Fixture
+    Assert-BladeSucceeded $result
+    Assert-Equal 3 $result.Count
+    Assert-Equal 'Test-One' $result[0].FixtureName
     Assert-Equal 'Test-One' $result[0].Name
-    Assert-Equal 'Test-Two' $result[1].Fixture
+    Assert-Equal 'Test-Two' $result[1].FixtureName
     Assert-Equal 'Test-Two' $result[1].Name
 }
 
@@ -145,147 +120,113 @@ function Test-ShouldHandleNoFilesToTestUnderPath
 {
     $path = Join-Path $FixturesDir NoTestsHere
     $result = Invoke-BladeOnPath $path
-    Assert-LastProcessSucceeded 'blade failed'
-    Assert-Null $result
+    Assert-BladeSucceeded $result
 }
 
 function Test-ShouldContinueRunningTestsIfTearDownFails
 {
+    $result = $null
     try
     {
-        $result = Invoke-BladeOnScript TearDownFails
+        $result = Invoke-BladeOnScript TearDownFails -ErrorAction SilentlyContinue
     }
     catch { }
-    Assert-Equal 2 $result.Length "Not all tests run when teardown fails."
+    Assert-BladeFailed $result
+    Assert-Equal 3 $result.Length "Not all tests run when teardown fails."
     
     Assert-Equal 'Test-DoNothing' $result[0].Name
-    Assert-Equal 'Fixture-TearDownFails' $result[0].Fixture
-    Assert-True $result[0].Passed
+    Assert-Equal 'Fixture-TearDownFails' $result[0].FixtureName
+    Assert-False $result[0].Passed
     
     Assert-Equal 'Test-DoNothingToo' $result[1].Name
-    Assert-Equal 'Fixture-TearDownFails' $result[1].Fixture
-    Assert-True $result[1].Passed
+    Assert-Equal 'Fixture-TearDownFails' $result[1].FixtureName
+    Assert-False $result[1].Passed
 }
 
 function Test-ShouldReportIgnoredTests
 {
     $result = Invoke-BladeOnScript IgnoredTests
-    Assert-LastPRocessSucceeded 'blade failed'
-    Assert-Null $result
+    Assert-BladeSucceeded $result
 }
 
 function Test-ShouldExplicitlyRunIgnoredTest
 {
     $result = Invoke-BladeOnTest IgnoredTests DoNothing
-    Assert-LastProcessSucceeded 'blade failed'
-    Assert-Equal 'Fixture-IgnoredTests' $result.Fixture
-    Assert-Equal 'Ignore-DoNothing' $result.Name
-    Assert-True $result.Passed
+    Assert-BladeSucceeded $result
+    Assert-Equal 'Fixture-IgnoredTests' $result[0].FixtureName
+    Assert-Equal 'Ignore-DoNothing' $result[0].Name
+    Assert-True $result[0].Passed
 }
 
 function Test-ShouldReportFailedTests
 {
-    $result = Invoke-BladeOnScript FailingTest
-    Assert-LastProcessFailed 'blade succeeded'
-    Assert-Equal -1 $LastExitCode 'Blade didn''t output error code representing number of failing tests.'
-    Assert-NotNull $result
-    Assert-NotNull $result.Failure
-    Assert-Like $result.failure '*Test-ShouldFail*'
+    $result = Invoke-BladeOnScript FailingTest -ErrorAction SilentlyContinue
+    Assert-BladeFailed $result
+    Assert-NotNull $result[0].Failure
+    Assert-LIke $result[0].Failure.Message '*fail*'
 }
 
 function Test-ShouldReportMultipleFailedTests
 {
-    $result = Invoke-BladeOnScript MultipleFailingTests
-    Assert-LastProcessFailed 'blade succeeded'
-    Assert-Equal -3 $LastExitCode 'Blade didn''t output error code representing number of failing tests.'
-    Assert-Equal 3 $result.Count
-    $result | ForEach-Object { Assert-NotNull $_.Failure }
+    $result = Invoke-BladeOnScript MultipleFailingTests -ErrorAction SilentlyContinue
+    Assert-BladeFailed $result
+    Assert-Equal 4 $result.Count
+    $result | Select-Object -First 3 | ForEach-Object { Assert-NotNull $_.Failure }
 }
 
 function Test-ShouldReturnFailedExitCodeWhenErrorsEncountered
 {
-    $result = Invoke-BladeOnScript TestWithError
-    Assert-LastProcessFailed 'blade succeeded'
-    Assert-Equal 1 $LastExitCode 'Blade didn''t output error code representing number of test with errors.'
-    Assert-NotNull $result
-    Assert-NotNull $result.Exception
-    Assert-Like $result.Exception '*I failed*'
-    Assert-Equal 'Test-ShouldHaveError' $result.Name
+    $result = Invoke-BladeOnScript TestWithError -ErrorAction SilentlyContinue
+    Assert-BladeFailed $result
+    Assert-NotNull $result[0].Error
+    Assert-Like $result[0].Error '*I failed*'
+    Assert-Equal 'Test-ShouldHaveError' $result[0].Name
 }
 
 function Test-ShouldReportMultipleTestsWithErrors
 {
-    $result = Invoke-BladeOnScript WithMultipleErrors
-    Assert-LastProcessFailed 'blade succeeded'
-    Assert-Equal 3 $LastExitCode 'Blade didn''t output error code representing number of failing tests.'
-    Assert-Equal 3 $result.Count
-    $result | ForEach-Object { Assert-NotNull $_.Exception }
+    $result = Invoke-BladeOnScript WithMultipleErrors -ErrorAction SilentlyContinue
+    Assert-BladeFailed $result
+    Assert-Equal 4 $result.Count
+    $result | Select-Object -First 3 | ForEach-Object { Assert-NotNull $_.Error }
 }
 
 function Test-ShouldSupportOptionalFixture
 {
-    $result = Invoke-BladeOnScript WithConditionalTests
-    Assert-LastProcessSucceeded 'blade failed'
-    Assert-Null $result
+    [Blade.RunResult]$result = Invoke-BladeOnScript WithConditionalTests
+    Assert-BladeSucceeded $result
+    Assert-Is $result ([Blade.RunResult])
+    Assert-Equal 0 $result.Count
 }
 
 function Test-NewTempDirectoryTree
 {
     $result = Invoke-BladeOnPath -Path (Join-Path $PSScriptRoot 'Test-NewTempDirectoryTree.ps1')
-    Assert-LastProcessSucceeded 'New-TempDirectoryTree tests failed'
-    Assert-NotNull $result
-    $result | ForEach-Object { Assert-True $_.Passed }
+    Assert-BladeSucceeded $result
+    $result | Select-Object -First ($result.Count -1) | ForEach-Object { Assert-True $_.Passed }
 }
 
-
-Write-Output "# Test-Blade #"
-$testsFailed = 0
-$testErrors = 0
-$testCount = 0
-foreach( $function in (Get-Item function:\Test-*) )
+function Assert-BladeSucceeded
 {
-    if( $function.Name -eq 'Test-NodeExists' )
-    {
-        continue
-    }
-    
-    if( -not $TestName -or $function.Name -like "Test-$TestName" )
-    {
-        $testCount += 1
-        $error.Clear()
-        Setup
-        Write-Output $function.Name
-        try
-        {
-            . $function | Write-Verbose
-        }
-        catch [Blade.AssertionException] 
-        {
-            $ex = $_.Exception
-            $testsFailed++
-            Write-Host "$($ex.Message)`n  at $($ex.PSStackTrace -join "`n  at ")" -ForegroundColor Red
-            continue
-        }
-        catch
-        {
-            $testErrors++
-            for( $idx = 0; $idx -lt $error.Count; ++$idx )
-            {
-                $err = $error[$idx]
-                #Resolve-Error $err
-                $errInfo = $err.InvocationInfo
-                Write-Host "$($err)`n$($errInfo.PositionMessage.Trim())" -ForegroundColor Red
-            }
-        }
-        finally
-        {
-            if( Test-Path function:TearDown )
-            {
-                TearDown
-            }
-        }
-    }
+    param(
+        [object[]]
+        $Result
+    )
+
+    Assert-Equal 0 $Error.Count
+    [Blade.RunResult]$Result = $Result | Select-Object -Last 1
+    Assert-Equal 0 $Result.Errors.Count
+    Assert-Equal 0 $Result.Failures.Count
 }
 
-Write-Output "Ran $testCount test(s) with $testsFailed failure(s) and $testErrors error(s)."
-exit( $testsFailed + $testErrors )
+function Assert-BladeFailed
+{
+    param(
+        [object[]]
+        $Result
+    )
+
+    Assert-Like $Error[0].Exception.Message 'Ran * test* with * failure*, * error*, and * ignored in * seconds.'
+    [Blade.RunResult]$Result = $Result | Select-Object -Last 1
+    Assert-GreaterThan ($Result.Errors.Count + $Result.Failures.Count) 0
+}

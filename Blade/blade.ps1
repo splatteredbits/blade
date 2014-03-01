@@ -11,7 +11,9 @@ When executing the tests in a file, Blade does the following:
  * Executes each test.  For each test, Blade calls the `Start-Test` function (if defined), followed by the test, followed by the `Stop-Test` function (if defined).
  * Calls the `Stop-TestFixture` function (if one is defined)
 
-Output is captured and written to verbose output.
+Blade will return `Blade.TestResult` objects for all failed tests and a final `Blade.RunResult` object summarizing the results.  Use the `PassThru` switch to also get `Blade.TestResult` objects for passing tests.
+
+You can access the `Blade.RunResult` object from the last test run via the global `LASTBLADERESULT` variable.
 
 .EXAMPLE
 .\blade Test-MyScript.ps1
@@ -56,23 +58,11 @@ param(
 )
 
 #Requires -Version 3
-$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version 'Latest'
 
-if( (Get-Module -Name 'Blade') )
-{
-    Remove-Module 'Blade'
-}
-Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Blade.psd1' -Resolve)
-
-$modules = @{ }
-Get-Module | % { $modules[$_.Name] = $true }
+& (Join-Path -Path $PSScriptRoot -ChildPath 'Import-Blade.ps1' -Resolve)
 
 Set-TestVerbosity $VerbosePreference
-
-function Exit-Blade($exitCode = 0)
-{
-    exit($exitCode)
-}
 
 function Get-FunctionsInFile($testScript)
 {
@@ -88,7 +78,7 @@ function Get-FunctionsInFile($testScript)
     if( $errors -ne $null -and $errors.Count -gt 0 )
     {
         Write-Error "Found $($errors.count) error(s) parsing '$testScript'."
-        Exit-Blade -1 
+        return
     }
     
     Write-Verbose "Found $($tokens.Count) tokens in '$testScript'."
@@ -114,52 +104,16 @@ function Get-FunctionsInFile($testScript)
     return $functions.ToArray()
 }
 
-function Resolve-Error ($ErrorRecord=$Error[0])
-{
-   $ErrorRecord | Format-List * -Force
-   $ErrorRecord.InvocationInfo |Format-List *
-   $Exception = $ErrorRecord.Exception
-   for ($i = 0; $Exception; $i++, ($Exception = $Exception.InnerException))
-   {   "$i" * 80
-       $Exception |Format-List * -Force
-   }
-}
-
-function New-TestInfoObject
-{
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]
-        # The name of the test fixture.
-        $Fixture,
-
-        [Parameter(Mandatory=$true)]
-        [string]
-        # The name of the test.
-        $Name
-    )
-    $props =  @{ 
-                    Fixture = $Fixture; 
-                    Name = $Name ; 
-                    Passed = $false; 
-                    Failure = $null;
-                    Exception = $null; 
-                    Duration = $null; 
-                    PipelineOutput = @();
-                }
-    
-    New-Object PsObject -Property $props
-}
-
 function Invoke-Test($fixture, $function)
 {
-    $testInfo = New-TestInfoObject -Fixture $fixture -Name $function
+    $testInfo = New-Object 'Blade.TestResult' $fixture,$function
     Set-CurrentTest $function
     $startedAt = Get-Date
-    $output = @()
+
     try
     {
-        
+        $Error.Clear()
+
         if( Test-path function:Start-Test )
         {
             . Start-Test | Write-Verbose
@@ -171,15 +125,17 @@ function Invoke-Test($fixture, $function)
         
         if( Test-Path function:$function )
         {
-            $testInfo.Passed = $true
-            . $function | ForEach-Object { $output += $_ }
+            . $function | ForEach-Object { [void]$testInfo.Output.Add($_) }
         }
+
+        $testInfo.Completed()
     }
     catch [Blade.AssertionException]
     {
         $ex = $_.Exception
-        $testInfo.Passed = $false
-        $testInfo.Failure = "{0}`n  at {1}" -f $ex.Message,($ex.PSStackTrace -join "`n  at ")
+        $testInfo.Completed( $ex )
+#        $testInfo.Passed = $false
+#        $testInfo.Failure = "{0}`n  at {1}" -f $ex.Message,($ex.PSStackTrace -join "`n  at ")
     }
     catch
     {
@@ -189,21 +145,13 @@ function Invoke-Test($fixture, $function)
         }
         else
         {
-            $innerException = $_.Exception
-            while( $innerException.InnerException )
-            {
-                $innerException = $innerException.InnerException
-            }
-            $testInfo.Passed = $false
-            $testInfo.Exception = "{0}: {1}{2}" -f $innerException.GetType().FullName,$innerException.Message,$error[0].InvocationInfo.PositionMessage
+            $testInfo.Completed( $_ )
+#            $testInfo.Passed = $false
+#            $testInfo.Exception = "{0}: {1}{2}" -f $innerException.GetType().FullName,$innerException.Message,$error[0].InvocationInfo.PositionMessage
         }
     }
     finally
     {
-        if( $output )
-        {
-            $testInfo.PipelineOutput = $output
-        }
         $error.Clear()
         try
         {
@@ -218,12 +166,10 @@ function Invoke-Test($fixture, $function)
         }
         catch
         {
-            Write-Host "An error occured tearing down test '$function': $_" -ForegroundColor Red
-            $testInfo.Passed = $false
-            $error.Clear()
+            $testInfo.Completed( $_ )
+            Write-Error "An error occured tearing down test '$function': $_"
         }
     }
-    $testInfo.Duration = (Get-Date) - $startedAt 
     $testInfo
 }
 
@@ -240,13 +186,9 @@ if( $testScripts -eq $null )
 }
 
 $error.Clear()
-$testsRun = 0
-$testsFailed = 0
 $testsIgnored = 0
-$testErrors = 0
 $TestScript = $null
 $TestDir = $null
-$startedAt = Get-Date
 
 $results = $null
 $testScripts | 
@@ -274,6 +216,11 @@ $testScripts |
 
                             return $true
                         }
+        if( -not $functions )
+        {
+            return
+        }
+
         @('Start-TestFixture','Start-Test','Setup','TearDown','Stop-Test','Stop-TestFixture') |
             ForEach-Object { Join-Path -Path 'function:' -ChildPath $_ } |
             Where-Object { Test-Path -Path $_ } |
@@ -282,7 +229,7 @@ $testScripts |
         . $testCase.FullName
         try
         {
-            if( Test-Path -Path function:Start-TestFixture )
+            if( Test-Path -Path 'function:Start-TestFixture' )
             {
                 . Start-TestFixture | Write-Verbose
             }
@@ -290,7 +237,7 @@ $testScripts |
             foreach( $function in $functions )
             {
 
-                if( -not (Test-Path function:$function) )
+                if( -not (Test-Path -Path function:$function) )
                 {
                     continue
                 }
@@ -306,11 +253,9 @@ $testScripts |
                 }
                 catch
                 {
-                    Write-Host ("An error occured tearing down test fixture '{0}': {1}" -f $testCase.Name,$_) -ForegroundColor Red
-                    $result = New-TestInfoObject -Fixture $testModuleName -Name 'Stop-TestFixture'
-                    $result.Exception = $_
-                    $result
-                    $error.Clear()
+                    Write-Error ("An error occured tearing down test fixture '{0}': {1}" -f $testCase.Name,$_)
+                    $result = New-Object 'Blade.TestResult' $testModuleName,'Stop-TestFixture'
+                    $result.Finished( $_ )
                 }                
             }
         }
@@ -323,44 +268,14 @@ $testScripts |
                     Remove-Item function:\$function
                 }
             }
-            
-            # if we don't unload any modules loaded by the test, they get cached by PowerShell 
-            # and subsequent runs of the test script won't reload the updated module.
-            Get-Module | % {
-                if( -not $modules.ContainsKey( $_.Name ) )
-                {
-                    Remove-Module $_.Name -ErrorAction SilentlyContinue
-                }
-            }
         }        
     } | 
     Tee-Object -Variable 'results' |
-    Where-Object { -not $PassThru -and -not $_.Passed } |
-    Format-List Fixture,Name,Duration,Failure,Exception
+    Where-Object { $PassThru -or -not $_.Passed } 
 
-if( $results )
+$global:LASTBLADERESULT = New-Object 'Blade.RunResult' ([Blade.TestResult[]]$results), $testsIgnored
+if( $LASTBLADERESULT.Errors -or $LASTBLADERESULT.Failures )
 {
-    $testsRun = @( $results ).Count
-    $failedTests = @( $results | Where-Object { -not $_.Passed } )
-    $testsFailed = $failedTests.Count
-    $testErrors = @( $results | Where-Object { $_.Exception -ne $null } ).Count
+    Write-Error $LASTBLADERESULT.ToString()
 }
-else
-{
-    $testsRun = $testsFailed = $testErrors = 0
-}
-$timeTook = (Get-Date) - $startedAt
-Write-Host "Ran $testsRun test(s) with $testsFailed failure(s), $testErrors error(s), and $testsIgnored ignored in $($timeTook.TotalSeconds) second(s)."
-
-
-if( $PassThru )
-{
-    $results
-}
-
-$exitCode = (-$testsFailed)
-if( $testErrors -gt 0 )
-{
-    $exitCode = $testErrors
-}
-Exit-Blade $exitCode
+$global:LASTBLADERESULT

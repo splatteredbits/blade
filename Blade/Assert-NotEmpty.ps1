@@ -54,6 +54,6 @@ function Assert-NotEmpty
 
     if( ($hasLength -and $InputObject.Length -lt 1) -or ($hasCount -and $InputObject.Count -lt 1) )
     {
-        Fail  ("Object '{0}' not empty. {1}" -f $InputObject,$Message)
+        Fail  ("Object '{0}' empty. {1}" -f $InputObject,$Message)
     }
 }

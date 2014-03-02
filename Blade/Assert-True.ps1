@@ -25,6 +25,11 @@ function Assert-True
     Assert-True (Invoke-SomethingThatShouldReturnSomething)
 
     Demonstrates how to check that a function returns a true object/value.
+
+    .EXAMPLE
+    Assert-False $true 'The fladoozle didn't dooflaple.'
+
+    Demonstrates how to use the `Message` parameter to describe why the assertion might have failed.
     #>
     [CmdletBinding()]
     param(

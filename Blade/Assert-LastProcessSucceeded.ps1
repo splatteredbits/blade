@@ -5,7 +5,7 @@ function Assert-LastProcessSucceeded
     .SYNOPSIS
     Asserts that the last process succeeded by checking PowerShell's `$LastExitCode` automatic variable.
 
-    .DESCRIPTOIN
+    .DESCRIPTIoN
     A process succeeds if `$LastExitCode` is zero.
 
     .EXAMPLE

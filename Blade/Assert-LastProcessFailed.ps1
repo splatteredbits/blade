@@ -5,7 +5,7 @@ function Assert-LastProcessFailed
     .SYNOPSIS
     Asserts that the last process failed by checking PowerShell's `$LastExitCode` automatic variable.
 
-    .DESCRIPTOIN
+    .DESCRIPTION
     A process fails if `$LastExitCode` is non-zero.
 
     .EXAMPLE

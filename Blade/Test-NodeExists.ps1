@@ -8,6 +8,12 @@ function Test-NodeExists
     .DESCRIPTION
     It's usually pretty easy in PowerShell to check if a node exists in an XML document: simply test if a property exists on that node.  If, however, that XML document has namespaces, you have to do extra setup with the XML document so that you can find the node.  This function does that work for you.
 
+    .LINK
+    Assert-NodeExists
+
+    .LINK
+    Assert-NodeDoesNotExist
+
     .EXAMPLE
     Test-NodeExists '<foo><bar><baz /></bar></foo>' '/foo/bar/baz'
 

@@ -184,7 +184,8 @@ filter Convert-HelpToHtml
         }
         else
         {
-            Write-Warning ("Command {0}: Unable to find type name in {1}.  Return value full type name should end with a period." -f $_.Name,$returnValues)
+            $unknownReturnValues = $CommandHelp.returnValues | Select-Object -ExpandProperty 'returnValue'
+            Write-Warning ("Command {0}: Unable to find return/output type name in {1}.  Return value full type name should end with a period.  This can also indicate that a documentation header (i.e. .SYNOPSIS, .DESCRIPTION) is mis-spelled or that you're missing documentation." -f $_.Name,$unknownReturnValues)
         }
         $returnValues = $returnValues | Convert-MarkdownToHtml
         $returnValues = @"

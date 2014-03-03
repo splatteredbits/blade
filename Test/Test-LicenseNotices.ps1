@@ -53,7 +53,8 @@ function Test-AllFilesShouldHaveLicense
     $filesToSkip = @(
         '*Blade\blade.ps1',
         '*Blade\Blade.format.ps1xml',
-        '*Test\Fixtures\*'
+        '*Test\Fixtures\*',
+        '*Publish-Blade.ps1'
     )
     
     $filesMissingLicense = New-Object Collections.Generic.List[string]

@@ -29,29 +29,46 @@ function Invoke-Test
 
     Set-StrictMode -Version 'Latest'
 
-    $testInfo = New-Object 'Blade.TestResult' $fixture,$function
+    [Blade.TestResult]$testInfo = New-Object 'Blade.TestResult' $fixture,$function
     Set-CurrentTest $function
-    $startedAt = Get-Date
+
+    $Global:Error.Clear()
 
     try
     {
-        $Global:Error.Clear()
+        Invoke-Command -ScriptBlock { 
 
-        if( Test-path function:Start-Test )
-        {
-            . Start-Test | Write-Verbose
-        }
-        elseif( Test-Path function:SetUp )
-        {
-            . SetUp | Write-Verbose
-        }
+            if( Test-path function:Start-Test )
+            {
+                . Start-Test
+            }
+            elseif( Test-Path function:SetUp )
+            {
+                . SetUp
+            }
         
-        if( Test-Path function:$function )
-        {
-            . $function | ForEach-Object { [void]$testInfo.Output.Add($_) }
-        }
+            try
+            {
+                if( Test-Path function:$function )
+                {
+                    . $function 
+                }
 
-        $testInfo.Completed()
+                $testInfo.Completed()
+            }
+            finally
+            {
+                if( Test-Path function:Stop-Test )
+                {
+                    . Stop-Test
+                }
+                elseif( Test-Path -Path function:TearDown )
+                {
+                    . TearDown
+                }
+            }
+
+        } | ForEach-Object { [void]$testInfo.Output.Add( $_ ) }
     }
     catch [Blade.AssertionException]
     {
@@ -60,35 +77,13 @@ function Invoke-Test
     }
     catch
     {
-        if( $_.Exception.Message -eq 'Cannot bind argument to parameter ''Message'' because it is null.' )
-        {
-            Write-Warning 'It looks like your test is adding a null object to the command pipeline.'
-        }
-        else
-        {
-            $testInfo.Completed( $_ )
-        }
+        $testInfo.Completed( $_ )
     }
     finally
     {
         $Global:Error.Clear()
-        try
-        {
-            if( Test-Path function:Stop-Test )
-            {
-                . Stop-Test | Write-Verbose
-            }
-            elseif( Test-Path -Path function:TearDown )
-            {
-                . TearDown | Write-Verbose
-            }
-        }
-        catch
-        {
-            $testInfo.Completed( $_ )
-            Write-Error "An error occured tearing down test '$function': $_"
-        }
     }
+
     $testInfo
 }
 

@@ -16,21 +16,15 @@ function Assert-LastError
 {
     <#
     .SYNOPSIS
-    Asserts if the last error's (e.g. `$Error[0]`) messages matches a given string.
+    OBSOLETE.  Use `Assert-Error` instead.
 
     .DESCRIPTION
-    This test uses the `-match` operator to check if `$Error[0]` matches parameter `ExpectedError`.
+    OBSOLETE.  Use `Assert-Error` instead.
 
     .EXAMPLE
-    Assert-LastError 'not found'
+    Assert-Error -Last 'not found'
 
-    Demonstrates how to check that that last error's message matches the regular expression `not found`.
-
-    .EXAMPLE
-    Assert-LastError '\d+ files found'
-    
-    Demonstrates that the `ExpectedError` parameter is a regular expression.
-
+    Demonstrates how to use `Assert-Error` instead.
     #>
     [CmdletBinding()]
     param(
@@ -47,10 +41,8 @@ function Assert-LastError
 
     Set-StrictMode -Version 'Latest'
 
-    if( $Error[0] -notmatch $ExpectedError )
-    {
-        Fail "Last error '$($Error[0].Message)' did not match '$ExpectedError'." 
-    }
-}
+    Write-Warning 'OBSOLETE.  Use `Assert-Error -Last` instead.'
 
+    Assert-Error -Last -Regex $ExpectedError
+}
 Set-Alias -Name 'Assert-LastPipelineError' -Value 'Assert-LastError'

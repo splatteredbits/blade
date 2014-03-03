@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-    <title>Assert-IsNotNull :: Blade :: PowerShell Testing Module</title>
+    <title>Assert-NotNull :: Blade :: PowerShell Testing Module</title>
 	<link href="styles.css" type="text/css" rel="stylesheet" />
 </head>
 <body>
@@ -26,8 +26,6 @@
 		<li><a href="Assert-FileExists.html">Assert-FileExists</a></li>
 		<li><a href="Assert-GreaterThan.html">Assert-GreaterThan</a></li>
 		<li><a href="Assert-Is.html">Assert-Is</a></li>
-		<li><a href="Assert-IsNotNull.html">Assert-IsNotNull</a></li>
-		<li><a href="Assert-IsNull.html">Assert-IsNull</a></li>
 		<li><a href="Assert-LastError.html">Assert-LastError</a></li>
 		<li><a href="Assert-LastProcessFailed.html">Assert-LastProcessFailed</a></li>
 		<li><a href="Assert-LastProcessSucceeded.html">Assert-LastProcessSucceeded</a></li>
@@ -39,7 +37,10 @@
 		<li><a href="Assert-NoError.html">Assert-NoError</a></li>
 		<li><a href="Assert-NotEmpty.html">Assert-NotEmpty</a></li>
 		<li><a href="Assert-NotEqual.html">Assert-NotEqual</a></li>
+		<li><a href="Assert-NotNull.html">Assert-NotNull</a></li>
+		<li><a href="Assert-Null.html">Assert-Null</a></li>
 		<li><a href="Assert-True.html">Assert-True</a></li>
+		<li><a href="Invoke-Blade.html">Invoke-Blade</a></li>
 		<li><a href="New-AssertionException.html">New-AssertionException</a></li>
 		<li><a href="New-TempDirectory.html">New-TempDirectory</a></li>
 		<li><a href="New-TempDirectoryTree.html">New-TempDirectoryTree</a></li>
@@ -53,12 +54,12 @@
 </div>
 
 
-    <h1>Assert-IsNotNull</h1>
+    <h1>Assert-NotNull</h1>
     <div><p>Asserts that an object isn't <code>$null</code>.</p>
 </div>
 
         <h2>Syntax</h2>
-    <pre class="Syntax"><code>Assert-IsNotNull [[-InputObject] &lt;Object&gt;] [[-Message] &lt;String&gt;] [&lt;CommonParameters&gt;]</code></pre>
+    <pre class="Syntax"><code>Assert-NotNull [[-InputObject] &lt;Object&gt;] [[-Message] &lt;String&gt;] [&lt;CommonParameters&gt;]</code></pre>
     
     
     
@@ -102,10 +103,10 @@
     
         
                 <h2>EXAMPLE 1</h2>
-            <pre><code>Assert-IsNotNull $null</code></pre>
+            <pre><code>Assert-NotNull $null</code></pre>
             <p><p>Demonstrates how to fail a test by asserting that <code>$null</code> isn't <code>$null</code>.</p>
 </p><p></p><p></p><p></p><p></p>             <h2>EXAMPLE 2</h2>
-            <pre><code>Assert-IsNotNull $object 'The foo didn''t bar!'</code></pre>
+            <pre><code>Assert-NotNull $object 'The foo didn''t bar!'</code></pre>
             <p><p>Demonstrates how to give a descriptive error about why the assertion might be failing.</p>
 </p><p></p><p></p><p></p><p></p>
 </body>

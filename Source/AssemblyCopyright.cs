@@ -13,21 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Blade
-{
-    public sealed class AssertionException : System.Exception
-    {
-        private readonly string[] _psStackTrace;
+ using System.Reflection;
 
-        public AssertionException(string message, string[] psStackTrace)
-            : base(message)
-        {
-            _psStackTrace = psStackTrace;
-        }
-
-        public string[] PSStackTrace
-        {
-            get { return _psStackTrace; }
-        }
-    }
-}
+[assembly: AssemblyCopyright("Copyright © 2012 - 2014 Aaron Jensen")]

@@ -1,5 +1,5 @@
 
-function Assert-IsNull
+function Assert-Null
 {
     <#
     .SYNOPSIS
@@ -9,12 +9,12 @@ function Assert-IsNull
     `Value` is literally compared with `$null`.
 
     .EXAMPLE
-    Assert-IsNull $null
+    Assert-Null $null
 
     Demonstrates how to assert a value is equal to `$null`.
 
     .EXAMPLE
-    Assert-IsNull '' 'Uh-oh.  Empty string is null.'
+    Assert-Null '' 'Uh-oh.  Empty string is null.'
 
     Demonstrates how to assert a value is equal to `$null` and show a custom error message.
     #>
@@ -39,4 +39,4 @@ function Assert-IsNull
     }
 }
 
-Set-Alias -Name 'Assert-Null' -Value 'Assert-IsNull'
+Set-Alias -Name 'Assert-IsNull' -Value 'Assert-Null'

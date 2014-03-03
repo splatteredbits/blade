@@ -2,17 +2,36 @@ $FixturesDir = Join-Path $PSScriptRoot Fixtures
 $BladePath = Join-Path $PSScriptRoot ..\Blade\blade.ps1 -Resolve
 $markerPath = Join-Path $env:TEMP Test-Blade.marker
 
-function Invoke-Blade($ScriptBlock)
+function Invoke-Blade
 {
-    try
-    {
-        & $ScriptBlock
-    }
-#    catch { }
-    finally
-    {
-        & (Join-Path -Path $PSScriptRoot -ChildPath '..\Blade\Import-Blade.ps1' -Resolve)
-    }
+    param(
+        $Path, 
+        $Test
+    )
+
+    $powershell = [PowerShell]::Create().AddScript( {
+        param(
+            $BladePath,
+            $Path,
+            $Test
+        )
+
+        $optionalParams = @{ }
+        if( $Test )
+        {
+            $optionalParams.Test = $TEst
+        }
+        & $BladePath $Path @optionalParams -PassThru
+    } )
+
+    [void] $powershell.AddArgument( $BladePath )
+    [void] $powershell.AddArgument( $Path )
+    [void] $powershell.AddArgument( $Test )
+    $powershell.Invoke()
+    $powershell.Streams.Error | ForEach-Object { Write-Error $_ }
+    $powershell.Streams.Warning | Write-Warning
+    $powershell.Streams.Verbose | Write-Verbose
+    $powershell.Dispose()
 }
 
 function Invoke-BladeOnScript
@@ -22,23 +41,12 @@ function Invoke-BladeOnScript
         $Script
     )
 
-    Invoke-Blade { 
-        & $BladePath (Join-Path $FixturesDir "Fixture-$Script.ps1" ) -PassThru -ErrorAction:$ErrorActionPreference
-    }
+    Invoke-Blade (Join-Path $FixturesDir "Fixture-$Script.ps1" ) -ErrorAction:$ErrorActionPreference
 }
 
 function Invoke-BladeOnTest($Script, $Test)
 {
-    Invoke-Blade {
-        & $BladePath (Join-Path $FixturesDir "Fixture-$Script.ps1") -Test $Test -PassThru
-    }
-}
-
-function Invoke-BladeOnPath($Path)
-{
-    Invoke-Blade {
-        & $BladePath -Path $Path -PassThru
-    }
+    Invoke-Blade (Join-Path $FixturesDir "Fixture-$Script.ps1") $Test -PassThru
 }
 
 function Test-ShouldRunTestsInFile
@@ -99,15 +107,14 @@ function Test-ShouldHandleSyntaxErrors
         $result = Invoke-BladeOnScript SyntaxError -ErrorAction SilentlyContinue
     }
     catch { }
-    Assert-Equal 1 $Error.Count 'Didn''t get expected errors.'
-    Assert-Like $error[0] "Found * error(s) parsing" "didn't find paring errors"
-    $error.Clear()
+    Assert-Equal 1 $Global:Error.Count 'Didn''t get expected errors.'
+    Assert-Like $Global:Error[0] "Found * error(s) parsing" "didn't find paring errors"
 }
 
 function Test-ShouldRunAllTestsUnderAPath
 {
     $path = JOin-path $FixturesDir FixturesForPath
-    $result = Invoke-BladeOnPath $path
+    $result = Invoke-Blade $path
     Assert-BladeSucceeded $result
     Assert-Equal 3 $result.Count
     Assert-Equal 'Test-One' $result[0].FixtureName
@@ -119,7 +126,7 @@ function Test-ShouldRunAllTestsUnderAPath
 function Test-ShouldHandleNoFilesToTestUnderPath
 {
     $path = Join-Path $FixturesDir NoTestsHere
-    $result = Invoke-BladeOnPath $path
+    $result = Invoke-Blade $path
     Assert-BladeSucceeded $result
 }
 
@@ -201,7 +208,7 @@ function Test-ShouldSupportOptionalFixture
 
 function Test-NewTempDirectoryTree
 {
-    $result = Invoke-BladeOnPath -Path (Join-Path $PSScriptRoot 'Test-NewTempDirectoryTree.ps1')
+    $result = Invoke-Blade -Path (Join-Path $PSScriptRoot 'Test-NewTempDirectoryTree.ps1')
     Assert-BladeSucceeded $result
     $result | Select-Object -First ($result.Count -1) | ForEach-Object { Assert-True $_.Passed }
 }
@@ -213,7 +220,7 @@ function Assert-BladeSucceeded
         $Result
     )
 
-    Assert-Equal 0 $Error.Count
+    Assert-Equal 0 $Global:Error.Count
     [Blade.RunResult]$Result = $Result | Select-Object -Last 1
     Assert-Equal 0 $Result.Errors.Count
     Assert-Equal 0 $Result.Failures.Count
@@ -226,7 +233,7 @@ function Assert-BladeFailed
         $Result
     )
 
-    Assert-Like $Error[0].Exception.Message 'Ran * test* with * failure*, * error*, and * ignored in * seconds.'
+    Assert-Like $Global:Error[0].Exception.Message 'Ran * test* with * failure*, * error*, and * ignored in * seconds.'
     [Blade.RunResult]$Result = $Result | Select-Object -Last 1
     Assert-GreaterThan ($Result.Errors.Count + $Result.Failures.Count) 0
 }

@@ -10,6 +10,8 @@ Get-Item -Path (Join-Path $PSScriptRoot '*-*.ps1') |
 $privateFunctions = @{ 
                         'Remove-ItemWithRetry' = $true; 
                         'Set-CurrentTest' = $true; 
+                        'Invoke-Test' = $true;
+                        'Get-FunctionsInFile' = $true;
                     }
 
 $publicFunctions = Get-ChildItem -Path 'function:\' |

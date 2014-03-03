@@ -1,5 +1,5 @@
 
-function Assert-IsNotNull
+function Assert-NotNull
 {
     <#
     .SYNOPSIS
@@ -8,12 +8,12 @@ function Assert-IsNotNull
     .DESCRIPTION
 
     .EXAMPLE
-    Assert-IsNotNull $null
+    Assert-NotNull $null
 
     Demonstrates how to fail a test by asserting that `$null` isn't `$null`.
 
     .EXAMPLE
-    Assert-IsNotNull $object 'The foo didn''t bar!'
+    Assert-NotNull $object 'The foo didn''t bar!'
 
     Demonstrates how to give a descriptive error about why the assertion might be failing.
     #>
@@ -38,4 +38,4 @@ function Assert-IsNotNull
     }
 }
 
-Set-Alias -Name 'Assert-NotNull' -Value 'Assert-IsNotNull'
+Set-Alias -Name 'Assert-IsNotNull' -Value 'Assert-NotNull'

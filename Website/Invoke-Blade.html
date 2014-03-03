@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-    <title>Assert-Match :: Blade :: PowerShell Testing Module</title>
+    <title>Invoke-Blade :: Blade :: PowerShell Testing Module</title>
 	<link href="styles.css" type="text/css" rel="stylesheet" />
 </head>
 <body>
@@ -54,20 +54,36 @@
 </div>
 
 
-    <h1>Assert-Match</h1>
-    <div><p>Asserts that a string matches a regular expression.</p>
+    <h1>Invoke-Blade</h1>
+    <div><p>Runs Blade tests in a file or set of directories.</p>
 </div>
 
         <h2>Syntax</h2>
-    <pre class="Syntax"><code>Assert-Match [-Haystack] &lt;String&gt; [-Regex] &lt;String&gt; [[-Message] &lt;String&gt;] [&lt;CommonParameters&gt;]</code></pre>
+    <pre class="Syntax"><code>Invoke-Blade [-Path] &lt;String[]&gt; [-Test &lt;String[]&gt;] [-PassThru] [-Recurse] [&lt;CommonParameters&gt;]</code></pre>
     
         <h2>Description</h2>
     <div class="Description">
-        <p>Uses PowerShell's <code>-match</code> operator, e.g. <code>$Haystack -match $Regex</code>.</p>
+        <p>Blade is a simple testing framework, inspired by NUnit.  It reads in all the files under a given path (or paths), and opens each file that matches the <code>Test-*</code> pattern.  It will then execute the tests in that file.  Blade tests are functions that that use the <code>Test</code> verb in their name, i.e. whose name match the <code>Test-*</code> pattern.</p>
+
+<p>When executing the tests in a file, Blade does the following:</p>
+
+<ul>
+<li>Calls the <code>Start-TestFixture</code> function (if one is defined)</li>
+<li>Executes each test.  For each test, Blade calls the <code>Start-Test</code> function (if defined), followed by the test, followed by the <code>Stop-Test</code> function (if defined).</li>
+<li>Calls the <code>Stop-TestFixture</code> function (if one is defined)</li>
+</ul>
+
+<p>Blade will return <code>Blade.TestResult</code> objects for all failed tests and a final <code>Blade.RunResult</code> object summarizing the results.  Use the <code>PassThru</code> switch to also get <code>Blade.TestResult</code> objects for passing tests.</p>
+
+<p>You can access the <code>Blade.RunResult</code> object from the last test run via the global <code>LASTBLADERESULT</code> variable.</p>
 
     </div>
     
-    
+            <h2>Related Commands</h2>
+        <ul>
+<li><a href="about_Blade.html">about_Blade</a></li>
+</ul>
+
 
     		<h2> Parameters </h2>
 		<table border='1'>
@@ -80,31 +96,40 @@
 				<th>Default Value</th>
 			</tr>
             			<tr valign='top'>
-				<td>Haystack</td>
-				<td><a href="http://msdn.microsoft.com/en-us/library/system.string.aspx">String</a></td>
-				<td>The string that should match the regular expression
+				<td>Path</td>
+				<td><a href="http://msdn.microsoft.com/en-us/library/system.string.aspx">String[]</a></td>
+				<td>The paths to search for tests.  All files matching Test-*.ps1 will be run.
 </td>
 				<td>true</td>
 				<td>false</td>
                 <td></td>
 			</tr>
 			<tr valign='top'>
-				<td>Regex</td>
-				<td><a href="http://msdn.microsoft.com/en-us/library/system.string.aspx">String</a></td>
-				<td>The regular expression to use when matching.
+				<td>Test</td>
+				<td><a href="http://msdn.microsoft.com/en-us/library/system.string.aspx">String[]</a></td>
+				<td>The individual test in the script to run.  Defaults to all tests.
 </td>
-				<td>true</td>
+				<td>false</td>
 				<td>false</td>
                 <td></td>
 			</tr>
 			<tr valign='top'>
-				<td>Message</td>
-				<td><a href="http://msdn.microsoft.com/en-us/library/system.string.aspx">String</a></td>
-				<td>The message to show when the assertion fails.
+				<td>PassThru</td>
+				<td><a href="http://msdn.microsoft.com/en-us/library/system.management.automation.switchparameter.aspx">SwitchParameter</a></td>
+				<td>Return objects for each test run.
 </td>
 				<td>false</td>
 				<td>false</td>
-                <td></td>
+                <td>False</td>
+			</tr>
+			<tr valign='top'>
+				<td>Recurse</td>
+				<td><a href="http://msdn.microsoft.com/en-us/library/system.management.automation.switchparameter.aspx">SwitchParameter</a></td>
+				<td>Recurse through directories under <code>$Path</code> to find tests.
+</td>
+				<td>false</td>
+				<td>false</td>
+                <td>False</td>
 			</tr>
             
         </table>
@@ -116,11 +141,17 @@
     
         
                 <h2>EXAMPLE 1</h2>
-            <pre><code>Assert-Match 'Haystack' 'stack'</code></pre>
-            <p><p>Demonstrates how to check that a string matches  regular expression.</p>
+            <pre><code>.\blade Test-MyScript.ps1</code></pre>
+            <p><p>Will run all the tests in the <code>Test-MyScript.ps1</code> script.</p>
 </p><p></p><p></p><p></p><p></p>             <h2>EXAMPLE 2</h2>
-            <pre><code>Assert-Match 'NONumbers!' '\d' 'Ack! No numbers doesn''t have any numbers.'</code></pre>
-            <p><p>Demonstrates how to show a specific message if the assertion fails.</p>
+            <pre><code>.\blade Test-MyScript.ps1 -Test MyTest</code></pre>
+            <p><p>Will run the <code>MyTest</code> test in the <code>Test-MyScript.ps1</code> test script.</p>
+</p><p></p><p></p><p></p><p></p>             <h2>EXAMPLE 3</h2>
+            <pre><code>blade .\MyModule</code></pre>
+            <p><p>Will run all tests in the files which match the <code>Test-*.ps1</code> wildcard in the .\MyModule directory.</p>
+</p><p></p><p></p><p></p><p></p>             <h2>EXAMPLE 4</h2>
+            <pre><code>blade .\MyModule -Recurse</code></pre>
+            <p><p>Will run all test in files which match the <code>Test-*.ps1</code> wildcard under the .\MyModule directory and its sub-directories.</p>
 </p><p></p><p></p><p></p><p></p>
 </body>
 </html>   

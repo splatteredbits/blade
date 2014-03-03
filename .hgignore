@@ -7,3 +7,4 @@ glob:Source\Test\obj
 glob:Source\*.suo
 glob:Source\*.user
 glob:Source\**\*.user
+glob:Source\Blade.snk

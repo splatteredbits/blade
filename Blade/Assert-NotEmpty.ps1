@@ -53,7 +53,7 @@ function Assert-NotEmpty
 
     if( $InputObject -eq $null )
     {
-        Fail "Object is null but expected it to be not empty. {0}" -f $Message
+        Fail ("Object is null but expected it to be not empty. {0}" -f $Message)
         return
     }
 

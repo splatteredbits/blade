@@ -65,8 +65,6 @@ Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Import-Blade.ps1' -Resolve)
 
-Set-TestVerbosity $VerbosePreference
-
 function Get-FunctionsInFile($testScript)
 {
     Write-Verbose "Loading test script '$testScript'."

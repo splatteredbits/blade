@@ -60,7 +60,80 @@
     
         <h2>Description</h2>
     <div class="Description">
-        <p>Blade is a testing framework and tool for PowerShell inspired by <a href="http://nunit.org">NUnit</a>.</p>
+        <p>Blade is a testing tool for PowerShell inspired by <a href="http://nunit.org">NUnit</a>.  Test fixtures are PowerShell scripts that begin with the <code>Test</code> verb.  A test is any function in the test fixture script that begins with the <code>Test</code> verb.</p>
+
+<p>To get started, create a test fixture file:</p>
+
+<pre><code>&gt; New-Item -ItemType File Test-BladeDemo.ps1
+</code></pre>
+
+<p>Now, open up your new test fixture, and start adding tests.  </p>
+
+<pre><code>function Test-ShouldRunThisTest
+{
+    Assert-True $true
+}
+</code></pre>
+
+<p>Save your test fixture, then execute it and you should see output similar to this:</p>
+
+<pre><code>&gt; blade.ps1 Test-BladeDemo.ps1
+
+   Count Failures   Errors  Ignored Duration        
+   ----- --------   ------  ------- --------        
+       1        0        0        0 00:00:00        
+</code></pre>
+
+<p>Pretty easy.  If all your tests have common setup/teardown functionality, add it to the special <code>Start-Test</code> and <code>Stop-Test</code> functions, which will get run once for <em>each</em> test:</p>
+
+<pre><code>$tempDir = $null
+
+function Start-Test
+{
+    $tempDir = New-TempDir
+}
+
+function Stop-Test
+{
+    Remove-Item -Path $tempDir -Recurse
+}
+
+function Test-ShouldCreateTempDir
+{
+    Assert-DirectoryExists $tempDir
+}
+</code></pre>
+
+<p>Finally, if you have setup/teardown that needs to run once before/after <em>all</em> tests, add it the special <code>Start-TestFixture</code> and <code>Stop-TestFixture</code> functions:</p>
+
+<pre><code>$tempDir = $null
+
+function Start-TestFixture
+{
+    # Import the PowerShell module we're testing.
+    &amp; (Join-Path -Path $PSScriptRoot -ChildPath '..\CoolestModuleEver\Import-CoolestModuleEver.ps1' -Resolve)
+}
+
+function Start-Test
+{
+    $tempDir = New-TempDir
+}
+
+function Stop-Test
+{
+    Remove-Item -Path $tempDir -Recurse
+}
+
+function Stop-TestFixture
+{
+    Remove-Module 'CoolestModuleEver'
+}
+
+function Test-ShouldCreateTempDir
+{
+    Assert-DirectoryExists $tempDir
+}
+</code></pre>
 
     </div>
     

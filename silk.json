@@ -7,7 +7,7 @@
 
     AssemblyNames: [ '.\\Blade\\Blade.dll' ],
     
-    CommandsToSkip: [ 'Assert-CEqual' ],
+    CommandsToSkip: [ 'Assert-CEqual', 'Assert-LastError' ],
     
     Scripts: [ 'Blade\\blade.ps1', 'Blade\\Import-Blade.ps1' ],
     

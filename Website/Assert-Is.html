@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>Assert-Is :: Blade :: PowerShell Testing Module</title>
+	<link href="styles.css" type="text/css" rel="stylesheet" />
+</head>
+<body>
+    <div id="CommandMenuContainer" style="float:left;">
+<h1>Topics</h1>
+	<ul class="CommandMenu">
+		<li><a href="index.html">about_Blade</a></li>
+	</ul>
+<h1>Commands</h1>
+	<ul class="CommandMenu">
+		<li><a href="Assert-Contains.html">Assert-Contains</a></li>
+		<li><a href="Assert-ContainsLike.html">Assert-ContainsLike</a></li>
+		<li><a href="Assert-ContainsNotLike.html">Assert-ContainsNotLike</a></li>
+		<li><a href="Assert-DirectoryDoesNotExist.html">Assert-DirectoryDoesNotExist</a></li>
+		<li><a href="Assert-DirectoryExists.html">Assert-DirectoryExists</a></li>
+		<li><a href="Assert-DoesNotContain.html">Assert-DoesNotContain</a></li>
+		<li><a href="Assert-Empty.html">Assert-Empty</a></li>
+		<li><a href="Assert-Equal.html">Assert-Equal</a></li>
+		<li><a href="Assert-False.html">Assert-False</a></li>
+		<li><a href="Assert-FileContains.html">Assert-FileContains</a></li>
+		<li><a href="Assert-FileDoesNotExist.html">Assert-FileDoesNotExist</a></li>
+		<li><a href="Assert-FileExists.html">Assert-FileExists</a></li>
+		<li><a href="Assert-GreaterThan.html">Assert-GreaterThan</a></li>
+		<li><a href="Assert-Is.html">Assert-Is</a></li>
+		<li><a href="Assert-IsNotNull.html">Assert-IsNotNull</a></li>
+		<li><a href="Assert-IsNull.html">Assert-IsNull</a></li>
+		<li><a href="Assert-LastError.html">Assert-LastError</a></li>
+		<li><a href="Assert-LastProcessFailed.html">Assert-LastProcessFailed</a></li>
+		<li><a href="Assert-LastProcessSucceeded.html">Assert-LastProcessSucceeded</a></li>
+		<li><a href="Assert-LessThan.html">Assert-LessThan</a></li>
+		<li><a href="Assert-Like.html">Assert-Like</a></li>
+		<li><a href="Assert-Match.html">Assert-Match</a></li>
+		<li><a href="Assert-NodeDoesNotExist.html">Assert-NodeDoesNotExist</a></li>
+		<li><a href="Assert-NodeExists.html">Assert-NodeExists</a></li>
+		<li><a href="Assert-NoError.html">Assert-NoError</a></li>
+		<li><a href="Assert-NotEmpty.html">Assert-NotEmpty</a></li>
+		<li><a href="Assert-NotEqual.html">Assert-NotEqual</a></li>
+		<li><a href="Assert-True.html">Assert-True</a></li>
+		<li><a href="New-AssertionException.html">New-AssertionException</a></li>
+		<li><a href="New-TempDirectory.html">New-TempDirectory</a></li>
+		<li><a href="New-TempDirectoryTree.html">New-TempDirectoryTree</a></li>
+		<li><a href="Test-NodeExists.html">Test-NodeExists</a></li>
+	</ul>
+<h1>Scripts</h1>
+	<ul class="CommandMenu">
+		<li><a href="blade.ps1.html">blade.ps1</a></li>
+		<li><a href="Import-Blade.ps1.html">Import-Blade.ps1</a></li>
+	</ul>
+</div>
+
+
+    <h1>Assert-Is</h1>
+    <div><p>Asserts that an object is a specific type.</p>
+</div>
+
+        <h2>Syntax</h2>
+    <pre class="Syntax"><code>Assert-Is [[-InputObject] &lt;Object&gt;] [[-ExpectedType] &lt;Type&gt;] [[-Message] &lt;String&gt;] [&lt;CommonParameters&gt;]</code></pre>
+    
+        <h2>Description</h2>
+    <div class="Description">
+        <p>Uses PowerShell's <code>-is</code> operator to check that <code>InputObject</code> is the <code>ExpectedType</code> type.</p>
+
+    </div>
+    
+    
+
+    		<h2> Parameters </h2>
+		<table border='1'>
+			<tr>
+				<th>Name</th>
+                <th>Type</th>
+				<th>Description</th>
+				<th>Required?</th>
+				<th>Pipeline Input</th>
+				<th>Default Value</th>
+			</tr>
+            			<tr valign='top'>
+				<td>InputObject</td>
+				<td><a href="http://msdn.microsoft.com/en-us/library/system.object.aspx">Object</a></td>
+				<td>The object whose type to check.
+</td>
+				<td>false</td>
+				<td>false</td>
+                <td></td>
+			</tr>
+			<tr valign='top'>
+				<td>ExpectedType</td>
+				<td><a href="http://msdn.microsoft.com/en-us/library/system.type.aspx">Type</a></td>
+				<td>The expected type of the object.
+</td>
+				<td>false</td>
+				<td>false</td>
+                <td></td>
+			</tr>
+			<tr valign='top'>
+				<td>Message</td>
+				<td><a href="http://msdn.microsoft.com/en-us/library/system.string.aspx">String</a></td>
+				<td>A message to show when the assertion fails.
+</td>
+				<td>false</td>
+				<td>false</td>
+                <td></td>
+			</tr>
+            
+        </table>
+        
+    
+        
+    
+        
+    
+        
+                <h2>EXAMPLE 1</h2>
+            <pre><code>Assert-Is 'foobar' ([string])</code></pre>
+            <p><p>Demonstrates how to assert an object is of a specific type.</p>
+</p><p></p><p></p><p></p><p></p>             <h2>EXAMPLE 2</h2>
+            <pre><code>Assert-Is 1 'double' 'Not enough decimals!'</code></pre>
+            <p><p>Demonstrates how to show a message describing why the test might fail.</p>
+</p><p></p><p></p><p></p><p></p>
+</body>
+</html>   

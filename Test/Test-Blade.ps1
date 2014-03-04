@@ -153,15 +153,24 @@ function Test-ShouldContinueRunningTestsIfTearDownFails
     }
     catch { }
     Assert-BladeFailed $result
-    Assert-Equal 3 $result.Length "Not all tests run when teardown fails."
+    Assert-Equal 5 $result.Length "Not all tests run when teardown fails."
     
     Assert-Equal 'Test-DoNothing' $result[0].Name
     Assert-Equal 'Fixture-TearDownFails' $result[0].FixtureName
-    Assert-False $result[0].Passed
+    Assert-True $result[0].Passed
     
-    Assert-Equal 'Test-DoNothingToo' $result[1].Name
+    Assert-Equal 'Stop-Test' $result[1].Name
     Assert-Equal 'Fixture-TearDownFails' $result[1].FixtureName
     Assert-False $result[1].Passed
+    
+    Assert-Equal 'Test-DoNothingToo' $result[2].Name
+    Assert-Equal 'Fixture-TearDownFails' $result[2].FixtureName
+    Assert-True $result[2].Passed
+
+    Assert-Equal 'Stop-Test' $result[3].Name
+    Assert-Equal 'Fixture-TearDownFails' $result[3].FixtureName
+    Assert-False $result[3].Passed
+    
 }
 
 function Test-ShouldReportIgnoredTests

@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-$currentTest = $null
-
 $doNotImport = @{ 'Import-Blade' = $true }
 
 Get-Item -Path (Join-Path $PSScriptRoot '*-*.ps1') | 
@@ -22,7 +20,6 @@ Get-Item -Path (Join-Path $PSScriptRoot '*-*.ps1') |
 
 $privateFunctions = @{ 
                         'Remove-ItemWithRetry' = $true; 
-                        'Set-CurrentTest' = $true; 
                         'Invoke-Test' = $true;
                         'Get-FunctionsInFile' = $true;
                     }

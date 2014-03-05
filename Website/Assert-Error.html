@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-    <title>Invoke-Blade :: Blade :: PowerShell Testing Module</title>
+    <title>Assert-Error :: Blade :: PowerShell Testing Module</title>
 	<link href="styles.css" type="text/css" rel="stylesheet" />
 </head>
 <body>
@@ -20,13 +20,13 @@
 		<li><a href="Assert-DoesNotContain.html">Assert-DoesNotContain</a></li>
 		<li><a href="Assert-Empty.html">Assert-Empty</a></li>
 		<li><a href="Assert-Equal.html">Assert-Equal</a></li>
+		<li><a href="Assert-Error.html">Assert-Error</a></li>
 		<li><a href="Assert-False.html">Assert-False</a></li>
 		<li><a href="Assert-FileContains.html">Assert-FileContains</a></li>
 		<li><a href="Assert-FileDoesNotExist.html">Assert-FileDoesNotExist</a></li>
 		<li><a href="Assert-FileExists.html">Assert-FileExists</a></li>
 		<li><a href="Assert-GreaterThan.html">Assert-GreaterThan</a></li>
 		<li><a href="Assert-Is.html">Assert-Is</a></li>
-		<li><a href="Assert-LastError.html">Assert-LastError</a></li>
 		<li><a href="Assert-LastProcessFailed.html">Assert-LastProcessFailed</a></li>
 		<li><a href="Assert-LastProcessSucceeded.html">Assert-LastProcessSucceeded</a></li>
 		<li><a href="Assert-LessThan.html">Assert-LessThan</a></li>
@@ -40,7 +40,6 @@
 		<li><a href="Assert-NotNull.html">Assert-NotNull</a></li>
 		<li><a href="Assert-Null.html">Assert-Null</a></li>
 		<li><a href="Assert-True.html">Assert-True</a></li>
-		<li><a href="Invoke-Blade.html">Invoke-Blade</a></li>
 		<li><a href="New-AssertionException.html">New-AssertionException</a></li>
 		<li><a href="New-TempDirectory.html">New-TempDirectory</a></li>
 		<li><a href="New-TempDirectoryTree.html">New-TempDirectoryTree</a></li>
@@ -54,36 +53,27 @@
 </div>
 
 
-    <h1>Invoke-Blade</h1>
-    <div><p>Runs Blade tests in a file or set of directories.</p>
+    <h1>Assert-Error</h1>
+    <div><p>Asserts that there are errors, and/or that a specific error's messages matches a regular expression.</p>
 </div>
 
         <h2>Syntax</h2>
-    <pre class="Syntax"><code>Invoke-Blade [-Path] &lt;String[]&gt; [-Test &lt;String[]&gt;] [-PassThru] [-Recurse] [&lt;CommonParameters&gt;]</code></pre>
+    <pre class="Syntax"><code>Assert-Error [[-Message] &lt;String&gt;] [&lt;CommonParameters&gt;]</code></pre>
+<pre class="Syntax"><code>Assert-Error -Last [-Regex] &lt;Regex&gt; [[-Message] &lt;String&gt;] [&lt;CommonParameters&gt;]</code></pre>
+<pre class="Syntax"><code>Assert-Error -First [-Regex] &lt;Regex&gt; [[-Message] &lt;String&gt;] [&lt;CommonParameters&gt;]</code></pre>
+<pre class="Syntax"><code>Assert-Error [-Index] &lt;Int32&gt; [-Regex] &lt;Regex&gt; [[-Message] &lt;String&gt;] [&lt;CommonParameters&gt;]</code></pre>
     
         <h2>Description</h2>
     <div class="Description">
-        <p>Blade is a simple testing framework, inspired by NUnit.  It reads in all the files under a given path (or paths), and opens each file that matches the <code>Test-*</code> pattern.  It will then execute the tests in that file.  Blade tests are functions that that use the <code>Test</code> verb in their name, i.e. whose name match the <code>Test-*</code> pattern.</p>
+        <p>With no parameters, checks that there are errors in the <code>$Error</code> array.</p>
 
-<p>When executing the tests in a file, Blade does the following:</p>
+<p>If passed an index and a regular expression, checks that there are errors in the <code>$Error</code> array, that there is one at index <code>Index</code>, and that it's message matches <code>$Regex</code>.</p>
 
-<ul>
-<li>Calls the <code>Start-TestFixture</code> function (if one is defined)</li>
-<li>Executes each test.  For each test, Blade calls the <code>Start-Test</code> function (if defined), followed by the test, followed by the <code>Stop-Test</code> function (if defined).</li>
-<li>Calls the <code>Stop-TestFixture</code> function (if one is defined)</li>
-</ul>
-
-<p>Blade will return <code>Blade.TestResult</code> objects for all failed tests and a final <code>Blade.RunResult</code> object summarizing the results.  Use the <code>PassThru</code> switch to also get <code>Blade.TestResult</code> objects for passing tests.</p>
-
-<p>You can access the <code>Blade.RunResult</code> object from the last test run via the global <code>LASTBLADERESULT</code> variable.</p>
+<p>If you want to check the last/most recent error, use the <code>-Last</code> switch.  To check the first/oldest error, use the <code>-First</code> switch.</p>
 
     </div>
     
-            <h2>Related Commands</h2>
-        <ul>
-<li><a href="about_Blade.html">about_Blade</a></li>
-</ul>
-
+    
 
     		<h2> Parameters </h2>
 		<table border='1'>
@@ -96,40 +86,49 @@
 				<th>Default Value</th>
 			</tr>
             			<tr valign='top'>
-				<td>Path</td>
-				<td><a href="http://msdn.microsoft.com/en-us/library/system.string.aspx">String[]</a></td>
-				<td>The paths to search for tests.  All files matching Test-*.ps1 will be run.
+				<td>Last</td>
+				<td><a href="http://msdn.microsoft.com/en-us/library/system.management.automation.switchparameter.aspx">SwitchParameter</a></td>
+				<td>Checks the last/most recent error.
+</td>
+				<td>true</td>
+				<td>false</td>
+                <td>False</td>
+			</tr>
+			<tr valign='top'>
+				<td>First</td>
+				<td><a href="http://msdn.microsoft.com/en-us/library/system.management.automation.switchparameter.aspx">SwitchParameter</a></td>
+				<td>Checks the first/oldest error.
+</td>
+				<td>true</td>
+				<td>false</td>
+                <td>False</td>
+			</tr>
+			<tr valign='top'>
+				<td>Index</td>
+				<td><a href="http://msdn.microsoft.com/en-us/library/system.int32.aspx">Int32</a></td>
+				<td>The index of the error to check.
+</td>
+				<td>true</td>
+				<td>false</td>
+                <td>0</td>
+			</tr>
+			<tr valign='top'>
+				<td>Regex</td>
+				<td><a href="http://msdn.microsoft.com/en-us/library/system.text.regularexpressions.regex.aspx">Regex</a></td>
+				<td>The regular expression to check.
 </td>
 				<td>true</td>
 				<td>false</td>
                 <td></td>
 			</tr>
 			<tr valign='top'>
-				<td>Test</td>
-				<td><a href="http://msdn.microsoft.com/en-us/library/system.string.aspx">String[]</a></td>
-				<td>The individual test in the script to run.  Defaults to all tests.
+				<td>Message</td>
+				<td><a href="http://msdn.microsoft.com/en-us/library/system.string.aspx">String</a></td>
+				<td>A message to show if the assertion fails.
 </td>
 				<td>false</td>
 				<td>false</td>
                 <td></td>
-			</tr>
-			<tr valign='top'>
-				<td>PassThru</td>
-				<td><a href="http://msdn.microsoft.com/en-us/library/system.management.automation.switchparameter.aspx">SwitchParameter</a></td>
-				<td>Return objects for each test run.
-</td>
-				<td>false</td>
-				<td>false</td>
-                <td>False</td>
-			</tr>
-			<tr valign='top'>
-				<td>Recurse</td>
-				<td><a href="http://msdn.microsoft.com/en-us/library/system.management.automation.switchparameter.aspx">SwitchParameter</a></td>
-				<td>Recurse through directories under <code>$Path</code> to find tests.
-</td>
-				<td>false</td>
-				<td>false</td>
-                <td>False</td>
 			</tr>
             
         </table>
@@ -141,17 +140,20 @@
     
         
                 <h2>EXAMPLE 1</h2>
-            <pre><code>.\blade Test-MyScript.ps1</code></pre>
-            <p><p>Will run all the tests in the <code>Test-MyScript.ps1</code> script.</p>
+            <pre><code>Assert-Error</code></pre>
+            <p><p>Demonstrates how to check that there is at least one error.</p>
 </p><p></p><p></p><p></p><p></p>             <h2>EXAMPLE 2</h2>
-            <pre><code>.\blade Test-MyScript.ps1 -Test MyTest</code></pre>
-            <p><p>Will run the <code>MyTest</code> test in the <code>Test-MyScript.ps1</code> test script.</p>
+            <pre><code>Assert-Error 0 'not found'</code></pre>
+            <p><p>Demonstrates how to check that the last error (remember, <code>$Error</code> is a stack) matches the regular expression <code>not found</code>.</p>
 </p><p></p><p></p><p></p><p></p>             <h2>EXAMPLE 3</h2>
-            <pre><code>blade .\MyModule</code></pre>
-            <p><p>Will run all tests in the files which match the <code>Test-*.ps1</code> wildcard in the .\MyModule directory.</p>
+            <pre><code>Assert-Error -1 'not found'</code></pre>
+            <p><p>Demonstrates how to check that the first error (remember, <code>$Error</code> is a stack) matches the regular expression <code>not found</code>.</p>
 </p><p></p><p></p><p></p><p></p>             <h2>EXAMPLE 4</h2>
-            <pre><code>blade .\MyModule -Recurse</code></pre>
-            <p><p>Will run all test in files which match the <code>Test-*.ps1</code> wildcard under the .\MyModule directory and its sub-directories.</p>
+            <pre><code>Assert-Error -Last 'not found'</code></pre>
+            <p><p>Demonstrates how to check that the last error matches the regular exprssion <code>not found</code> without worrying about indexes.</p>
+</p><p></p><p></p><p></p><p></p>             <h2>EXAMPLE 5</h2>
+            <pre><code>Assert-Error -First 'not found'</code></pre>
+            <p><p>Demonstrates how to check that the first error matches the regular exprssion <code>not found</code> without worrying about indexes.</p>
 </p><p></p><p></p><p></p><p></p>
 </body>
 </html>   

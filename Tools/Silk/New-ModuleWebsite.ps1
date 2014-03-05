@@ -148,10 +148,25 @@ $config.Scripts |
     ForEach-Object { 
         $topic = Get-Help -Full -Name $_ 
         $topic.Name = Split-Path -Leaf -Path $topic.Name
-        $topic.details.name = Split-Path -Leaf -Path $topic.details.name
-        $topic.syntax | 
-            Select-Object -ExpandProperty 'syntaxItem' | 
-            ForEach-Object { $_.name = Split-Path -Leaf -Path $_.name }
+        if( -not ($topic | Get-Member -Name 'details') ) 
+        {
+            Write-Error ('Details for ''{0}'' not found.' -f $_)
+        }
+        else
+        {
+            $topic.details.name = Split-Path -Leaf -Path $topic.details.name
+        }
+
+        if( -not ($topic | Get-Member -Name 'syntax') )
+        {
+            Write-Error ('Syntax for ''{0}'' not found.' -f $_)
+        }
+        else
+        {
+            $topic.syntax | 
+                Select-Object -ExpandProperty 'syntaxItem' | 
+                ForEach-Object { $_.name = Split-Path -Leaf -Path $_.name }
+        }
         $topic
     } |
     Convert-HelpToHtml -Menu $menuBuilder.ToString() -Config $config -DestinationPath $DestinationPath

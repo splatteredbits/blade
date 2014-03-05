@@ -54,7 +54,8 @@ function Test-AllFilesShouldHaveLicense
         '*Blade\blade.ps1',
         '*Blade\Blade.format.ps1xml',
         '*Test\Fixtures\*',
-        '*Publish-Blade.ps1'
+        '*Publish-Blade.ps1',
+        '*Blade\Import-Blade.ps1'
     )
     
     $filesMissingLicense = New-Object Collections.Generic.List[string]

@@ -1,4 +1,3 @@
-
 <#
 .SYNOPSIS
 Imports the Blade module.

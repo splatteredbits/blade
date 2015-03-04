@@ -59,9 +59,17 @@ param(
     # The paths to search for tests.  All files matching Test-*.ps1 will be run.
     $Path,
 
+    [string]
+    # The name of the tests being run.
+    $Name,
+
     [string[]]
     # The individual test in the script to run.  Defaults to all tests.
     $Test,
+
+    [string]
+    # Path to the file where XML results should be saved.
+    $XmlLogPath,
     
     [Switch]
     # Return objects for each test run.
@@ -291,10 +299,16 @@ $testScripts |
     Tee-Object -Variable 'results' |
     Where-Object { $PassThru -or -not $_.Passed } 
 
-$Global:LastBladeResult = New-Object 'Blade.RunResult' '',([Blade.TestResult[]]$results), $testsIgnored
+$Global:LastBladeResult = New-Object 'Blade.RunResult' $Name,([Blade.TestResult[]]$results), $testsIgnored
 if( $LastBladeResult.Errors -or $LastBladeResult.Failures )
 {
     Write-Error $LastBladeResult.ToString()
 }
+
+if( $XmlLogPath )
+{
+    $LastBladeResult | Export-RunResultXml -FilePath $XmlLogPath
+}
+
 $LastBladeResult | Format-Table | Out-Host
 

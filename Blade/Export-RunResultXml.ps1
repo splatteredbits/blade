@@ -59,7 +59,7 @@ function Export-RunResultXml
             Group-Object -Property 'FixtureName' |
             ForEach-Object {
                 $testSuite = $resultXml.CreateElement('test-suite')
-                $testResults.AppendChild( $testSuite )
+                [void]$testResults.AppendChild( $testSuite )
 
                 $testSuite.SetAttribute( 'type', 'BladeFixture' )
                 $testSuite.SetAttribute( 'name', $_.Name )
@@ -75,11 +75,11 @@ function Export-RunResultXml
                     if( -not $results )
                     {
                         $results = $resultXml.CreateElement( 'results' )
-                        $testSuite.AppendChild( $results )
+                        [void]$testSuite.AppendChild( $results )
                     }
 
                     $testCase = $resultXml.CreateElement('test-case')
-                    $results.AppendChild( $testCase )
+                    [void]$results.AppendChild( $testCase )
 
                     $testCase.SetAttribute( 'name', $testResult.Name )
                     $testCase.SetAttribute( 'executed', 'True' )
@@ -111,6 +111,11 @@ function Export-RunResultXml
 
     end
     {
+        $fileRoot = Split-Path -Parent -Path $FilePath
+        if( -not (Test-Path -Path $fileRoot -PathType Container) )
+        {
+            New-Item -Path $fileRoot -ItemType 'Directory' | Out-String | Write-Verbose
+        }
         $resultXml.Save( $FilePath )
     }
 

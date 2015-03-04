@@ -54,7 +54,7 @@ function Assert-NodeExists
         # The short prefix for the document's default namespace, if any.
         $DefaultNamespacePrefix, 
 
-        [Parameter()]
+        [Parameter(Position=3)]
         [string]
         # The message to describe the failure if the assertion fails.
         $Message

@@ -20,8 +20,9 @@ namespace Blade
 {
     public sealed class RunResult
     {
-        public RunResult(IEnumerable<TestResult> results, int numIgnored)
+        public RunResult(string name, IEnumerable<TestResult> results, int numIgnored)
         {
+	        Name = name;
             Passed = new List<TestResult>();
             Failures = new List<TestResult>();
             Errors = new List<TestResult>();
@@ -58,6 +59,7 @@ namespace Blade
         }
 
         public int Count { get; private set; }
+		public string Name { get; private set; }
         public IList<TestResult> Passed { get; private set; }
         public IList<TestResult> Failures { get; private set; }
         public IList<TestResult> Errors { get; private set; }

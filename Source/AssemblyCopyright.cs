@@ -15,4 +15,4 @@
  */
  using System.Reflection;
 
-[assembly: AssemblyCopyright("Copyright © 2012 - 2014 Aaron Jensen")]
+[assembly: AssemblyCopyright("Copyright © 2012 - 2015 Aaron Jensen")]

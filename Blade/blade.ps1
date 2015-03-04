@@ -58,7 +58,7 @@ param(
     [string[]]
     # The paths to search for tests.  All files matching Test-*.ps1 will be run.
     $Path,
-    
+
     [string[]]
     # The individual test in the script to run.  Defaults to all tests.
     $Test,
@@ -291,7 +291,7 @@ $testScripts |
     Tee-Object -Variable 'results' |
     Where-Object { $PassThru -or -not $_.Passed } 
 
-$Global:LastBladeResult = New-Object 'Blade.RunResult' ([Blade.TestResult[]]$results), $testsIgnored
+$Global:LastBladeResult = New-Object 'Blade.RunResult' '',([Blade.TestResult[]]$results), $testsIgnored
 if( $LastBladeResult.Errors -or $LastBladeResult.Failures )
 {
     Write-Error $LastBladeResult.ToString()

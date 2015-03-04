@@ -1,0 +1,3 @@
+# 0.11.0
+
+ * Created `Export-RunResultXml` function for exporting test results to an NUNit-compatible XML file.

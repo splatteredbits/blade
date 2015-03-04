@@ -29,6 +29,13 @@ function Test-ShouldExportIgnoredTests
     Assert-ShouldExportRunResult $result
 }
 
+function Test-ShouldCreateOutputDirectory
+{
+    Remove-Item -Path $tempDir -Recurse
+    $result = New-Object 'Blade.RunResult' 'ShouldCreateOutputDirectory',([Blade.TestResult[]]@()),0
+    Assert-ShouldExportRunResult $result
+}
+
 function Test-ShouldExportPositiveResults
 {
     $1_1 = New-Object 'Blade.TestResult' 'Fixture1','Test1'

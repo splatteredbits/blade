@@ -60,7 +60,9 @@ function Test-ShouldExportErrors
 
     @( $1_1, $2_1, $2_2 ) | ForEach-Object { Start-Sleep -Milliseconds (Get-Random -Minimum 1 -Maximum 100); $_.Completed() }
 
-    $1_2.Completed( (New-Object 'Blade.AssertionException' 'Fubar',(Get-PSCallStack)) )
+    Write-Error 'Unknown error!' -ErrorAction SilentlyContinue
+    $1_2.Completed( $Error[0] )
+    $Error.Clear()
 
     $result = New-Object 'Blade.RunResult' 'ShouldExportErrors',([Blade.TestResult[]]@($1_1, $1_2, $2_1, $2_2)),0
     Assert-ShouldExportRunResult $result
@@ -76,8 +78,7 @@ function Test-ShouldExportFailures
 
     @( $1_1, $2_1, $2_2 ) | ForEach-Object { Start-Sleep -Milliseconds (Get-Random -Minimum 1 -Maximum 100); $_.Completed() }
 
-    Write-Error 'fubar' -ErrorAction SilentlyContinue
-    $1_2.Completed( $Error[0] )
+    $1_2.Completed( (New-Object 'Blade.AssertionException' 'Test failure!',(Get-PSCallStack)) )
     $Error.Clear()
 
     $result = New-Object 'Blade.RunResult' 'ShouldExportFailures',([Blade.TestResult[]]@($1_1, $1_2, $2_1, $2_2)),0
@@ -177,11 +178,17 @@ function Assert-ShouldExportRunResult
                 if( $testResult.Error )
                 {
                     ++$errors
+                    Assert-Equal $testResult.Error.Exception.Message $testCase.failure.message
+                    # XML strips the \r
+                    Assert-Equal ($testResult.Error.ScriptStackTrace -replace "\r\n","`n") $testCase.failure.'stack-trace'
                 }
 
                 if( $testResult.Failure )
                 {
                     ++$failures
+                    Assert-Equal $testResult.Failure.Message $testCase.failure.message
+                    $stackTrace = 
+                    Assert-Equal ($testResult.Failure.PSStackTrace -join "`n  ") $testCase.failure.'stack-trace'
                 }
 
                 Assert-Equal 'Failure' $testCase.result
@@ -192,6 +199,7 @@ function Assert-ShouldExportRunResult
                 Assert-Equal 'Success' $testCase.result
                 Assert-Equal 'True' $testCase.success
             }
+
 
             ++$total
         }

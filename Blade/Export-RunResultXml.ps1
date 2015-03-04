@@ -94,6 +94,31 @@ function Export-RunResultXml
 
                         $testCase.SetAttribute( 'result', 'Failure' )
                         $testCase.SetAttribute( 'success', 'False' )
+
+                        $failure = $resultXml.CreateElement( 'failure' )
+                        [void]$testCase.AppendChild( $failure )
+
+                        $message = $resultXml.CreateElement( 'message' )
+                        [void]$failure.AppendChild( $message )
+                        
+                        $stackTrace = $resultXml.CreateElement( 'stack-trace' )
+                        [void]$failure.AppendChild( $stackTrace )
+
+                        if( $testResult.Error )
+                        {
+                            $ex = $testResult.Error.Exception
+                            while( $ex.InnerException )
+                            {
+                                $ex = $ex.InnerException
+                            }
+                            $message.InnerText = $ex.Message
+                            $stackTrace.InnerText = $testResult.Error.ScriptStackTrace
+                        }
+                        elseif( $testResult.Failure )
+                        {
+                            $message.InnerText = $testResult.Failure.Message
+                            $stackTrace.InnerText = $testResult.Failure.PSStackTrace -join ("{0}  " -f [Environment]::NewLine)
+                        }
                     }
                     else
                     {

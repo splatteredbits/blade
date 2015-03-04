@@ -72,7 +72,7 @@ param(
     $XmlLogPath,
     
     [Switch]
-    # Return objects for each test run.
+    # Return objects for each test run, and a final summary object.
     $PassThru,
     
     [Switch]
@@ -310,5 +310,13 @@ if( $XmlLogPath )
     $LastBladeResult | Export-RunResultXml -FilePath $XmlLogPath
 }
 
-$LastBladeResult | Format-Table | Out-Host
+if( $PassThru )
+{
+    $LastBladeResult
+}
+else
+{
+    $LastBladeResult | Format-Table | Out-Host
+}
+
 

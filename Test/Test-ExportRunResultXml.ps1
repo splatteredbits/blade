@@ -185,11 +185,11 @@ function Assert-ShouldExportRunResult
         $success = $true
         foreach( $testResult in $fixture.Group )
         {
-            $nodes = $testSuite.SelectNodes( ('results/test-case[@name = ''{0}'']' -f $testResult.Name) )
+            $nodes = $testSuite.SelectNodes( ('results/test-case[@name = ''{0}: {1}'']' -f $testSuite.name,$testResult.Name) )
             Assert-Equal 1 $nodes.Count
             $testCase = $nodes[0]
 
-            Assert-Equal $testResult.Name $testCase.name
+            Assert-Equal ('{0}: {1}' -f $testSuite.Name,$testResult.Name) $testCase.name
             Assert-Equal 'True' $testCase.executed
             Assert-Equal $testResult.Duration.TotalSeconds.ToString() $testCase.time
             Assert-Equal '0' $testCase.asserts

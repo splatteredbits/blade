@@ -1,3 +1,8 @@
+# 0.11.1
+
+ * CruiseControl.NET showing incorrect total test suite duration.
+ * Prefixing test case names with fixture name so test results are more readable under CruiseControl.NET.
+
 # 0.11.0
 
  * Created `Export-RunResultXml` function for exporting test results to an NUNit-compatible XML file.

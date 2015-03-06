@@ -113,6 +113,8 @@ function Assert-ShouldExportRunResult
         $RunResult
     )
 
+    Set-StrictMode -Version 'Latest'
+
     $RunResult | Export-RunResultXml -FilePath $outFile
     Assert-NoError
     Assert-FileExists $outFile
@@ -146,21 +148,30 @@ function Assert-ShouldExportRunResult
     [object[]]$fixtures = Invoke-Command -ScriptBlock { $RunResult.Errors ; $RunResult.Failures ; $RunResult.Passed } |
                                 Group-Object -Property 'FixtureName'
 
+    Assert-Equal 3 $docRoot.ChildNodes.Count
+
     $fixtureCount = 0
     if( $fixtures )
     {
         $fixtureCount = $fixtures.Count
     }
-    Assert-Equal (2 + $fixtureCount) $docRoot.ChildNodes.Count
+
+    $rootSuiteNode = $docRoot.'test-suite'
+    Assert-NotNull $rootSuiteNode
+    Assert-Equal $fixtureCount $rootSuiteNode.ChildNodes.Count
 
     $total = 0
     $errors = 0
     $failures = 0
+    $totalTime = [TimeSpan]::Zero
+    $finalResult = 'Success'
+    $finalSuccess = $true
+
     foreach( $fixture in $fixtures )
     {
         $fixtureName = $fixture.Name
 
-        $nodes = $docRoot.SelectNodes( ('test-suite[@name = ''{0}'']' -f $fixtureName) )
+        $nodes = $rootSuiteNode.SelectNodes( ('test-suite[@name = ''{0}'']' -f $fixtureName) )
         Assert-Equal 1 $nodes.Count
 
         $testSuite = $nodes[0]
@@ -184,10 +195,11 @@ function Assert-ShouldExportRunResult
             Assert-Equal '0' $testCase.asserts
 
             $duration += $testResult.Duration
+            $totalTime += $testResult.Duration
             if( -not $testResult.Passed )
             {
-                $result = 'Failure'
-                $success = $false
+                $finalResult = $result = 'Failure'
+                $finalSuccess = $success = $false
                 if( $testResult.Error )
                 {
                     ++$errors
@@ -200,7 +212,6 @@ function Assert-ShouldExportRunResult
                 {
                     ++$failures
                     Assert-Equal $testResult.Failure.Message $testCase.failure.message
-                    $stackTrace = 
                     Assert-Equal ($testResult.Failure.PSStackTrace -join "`n  ") $testCase.failure.'stack-trace'
                 }
 
@@ -221,6 +232,14 @@ function Assert-ShouldExportRunResult
         Assert-Equal $result $testSuite.'result'
         Assert-Equal $success.ToString() $testSuite.'success'
     }
+
+    Assert-Equal $totalTime.TotalSeconds.ToString() $rootSuiteNode.time
+    Assert-Equal $finalResult $rootSuiteNode.result
+    Assert-Equal $finalSuccess.ToString() $rootSuiteNode.success
+    Assert-Equal $RunResult.Name $rootSuiteNode.name
+    Assert-Equal 'BladeFixture' $rootSuiteNode.type
+    Assert-Equal '0' $rootSuiteNode.asserts
+    Assert-Equal 'True' $rootSuiteNode.executed
 
     Assert-Equal $total $docRoot.Attributes['total'].Value
 

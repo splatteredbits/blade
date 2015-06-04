@@ -12,6 +12,11 @@ function Assert-That
     Assert-That { throw 'Fubar!' } -Throws [Management.Automation.RuntimeException]
 
     Demonstrates how to check that a script block throws an exception.
+    
+    .EXAMPLE
+    Assert-That { } -DoesNotThrowException
+    
+    Demonstrates how to check that a script block doesn't throw an exception.
     #>
     [CmdletBinding()]
     param(
@@ -30,6 +35,11 @@ function Assert-That
         # Used with the `Throws` switch. Checks that the thrown exception message matches a regular rexpression.
         $AndMessageMatches,
 
+        [Parameter(Mandatory=$true,ParameterSetName='DoesNotThrowException')]
+        [Switch]
+        # Asserts that the script block given by `InputObject` does not throw an exception.
+        $DoesNotThrowException,
+
         [Parameter(ParameterSetName='ThrowsException',Position=1)]
         [string]
         # The message to show when the assertion fails.
@@ -40,6 +50,24 @@ function Assert-That
 
     switch( $PSCmdlet.ParameterSetName )
     {
+
+        'DoesNotThrowException'
+        {
+            if( $InputObject -isnot [scriptblock] )
+            {
+                throw 'When using `DoesNotThrowException` parameter, `-InputObject` must be a ScriptBlock.'
+            }
+
+            try
+            {
+                Invoke-Command -ScriptBlock $InputObject
+            }
+            catch
+            {
+                Fail ('Script block threw an exception: {0}  {1}' -f $_.Exception,$Message)
+            }
+        }
+
         'ThrowsException'
         {
             if( $InputObject -isnot [scriptblock] )
@@ -59,6 +87,10 @@ function Assert-That
                 if( $ex -is $Throws )
                 {
                     $threwException = $true
+                }
+                else
+                {
+                    Fail ('Expected ScriptBlock to throw a {0} exception, but it threw: {1}  {2}' -f $Throws,$ex,$Message)
                 }
             }
 

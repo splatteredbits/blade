@@ -18,6 +18,7 @@ $markerPath = Join-Path $env:TEMP Test-Blade.marker
 
 function Invoke-Blade
 {
+    [CmdletBinding()]
     param(
         $Path, 
         $Test
@@ -42,7 +43,7 @@ function Invoke-Blade
     [void] $powershell.AddArgument( $Path )
     [void] $powershell.AddArgument( $Test )
     $powershell.Invoke()
-    $powershell.Streams.Error | ForEach-Object { Write-Error $_ }
+    $powershell.Streams.Error | ForEach-Object { Write-Error $_ -ErrorAction:$ErrorActionPreference }
     $powershell.Streams.Warning | Write-Warning
     $powershell.Streams.Verbose | Write-Verbose
     $powershell.Dispose()

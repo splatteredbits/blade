@@ -1,3 +1,17 @@
+
+# 0.12.0
+
+## Enhancements
+
+ * Added Assert-That assertion. Going forward, new assertions will be added to this function.
+ * When a test tear down function fails, the result object uses the test's name instead of `Stop-Test`
+
+## Bug Fixes
+
+ * Test duration didn't include tear down durations.
+ * `Assert-Error` fails when error count is 0.
+
+ 
 # 0.11.1
 
  * CruiseControl.NET showing incorrect total test suite duration.

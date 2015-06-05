@@ -60,7 +60,7 @@ function Invoke-BladeOnScript
 
 function Invoke-BladeOnTest($Script, $Test)
 {
-    Invoke-Blade (Join-Path $FixturesDir "Fixture-$Script.ps1") $Test -PassThru
+    Invoke-Blade (Join-Path $FixturesDir "Fixture-$Script.ps1") $Test
 }
 
 function Test-ShouldRunTestsInFile
@@ -159,7 +159,7 @@ function Test-ShouldContinueRunningTestsIfTearDownFails
     Assert-Equal 'Fixture-TearDownFails' $result[0].FixtureName
     Assert-True $result[0].Passed
     
-    Assert-Equal 'Stop-Test' $result[1].Name
+    Assert-Equal 'Test-DoNothing' $result[1].Name
     Assert-Equal 'Fixture-TearDownFails' $result[1].FixtureName
     Assert-False $result[1].Passed
     
@@ -167,7 +167,7 @@ function Test-ShouldContinueRunningTestsIfTearDownFails
     Assert-Equal 'Fixture-TearDownFails' $result[2].FixtureName
     Assert-True $result[2].Passed
 
-    Assert-Equal 'Stop-Test' $result[3].Name
+    Assert-Equal 'Test-DoNothingToo' $result[3].Name
     Assert-Equal 'Fixture-TearDownFails' $result[3].FixtureName
     Assert-False $result[3].Passed
     
@@ -234,6 +234,80 @@ function Test-NewTempDirectoryTree
     $result = Invoke-Blade -Path (Join-Path $PSScriptRoot 'Test-NewTempDirectoryTree.ps1')
     Assert-BladeSucceeded $result
     $result | Select-Object -First ($result.Count -1) | ForEach-Object { Assert-True $_.Passed }
+}
+
+function Test-ShouldIncludeTearDownInTestTimings
+{
+    $fixture = @'
+function Start-Test
+{
+    Start-Sleep -Millisecond 100
+}
+
+function Stop-Test
+{
+    Start-Sleep -Millisecond 100
+    # Make sure it tracks the time even if stop-test throws an exception
+    throw 'fubar!'
+}
+
+function Test-ShouldSleep
+{
+    Start-Sleep -Millisecond 100
+}
+'@  | New-TestFixture -Name 'ShouldIncludeTearDownInTestTimings'
+
+    $result = Invoke-Blade -Path $fixture | Select-Object -First 1
+    Assert-NotNull $result
+    Assert-Is $result ([Blade.TestResult])
+    Assert-True ($result.Duration -gt ([timespan]'0:0:0.3')) ('{0}.{1} is shorter than 300 milliseconds' -f $result.Duration,$result.Duration.Milliseconds)
+}
+
+function Test-ShouldReturnTestResultForFailedTeardown
+{
+    $fixture = @'
+function Start-Test
+{
+}
+
+function Stop-Test
+{
+    throw 'fubar!'
+}
+
+function Test-ShouldReturnTestResultForFailedTeardown
+{
+}
+'@  | New-TestFixture -Name 'ShouldIncludeTearDownInTestTimings'
+
+    $result = Invoke-Blade -Path $fixture -ErrorAction SilentlyContinue
+    Assert-NotNull $result
+    Assert-Equal 3 $result.Count
+    $testResult = $result[0]
+    $teardownResult = $result[1]
+    Assert-Is $teardownResult ([Blade.TestResult])
+    Assert-Equal 'Test-ShouldReturnTestResultForFailedTeardown' $teardownResult.Name
+    Assert-NotNull $teardownResult.Error
+    Assert-Null $teardownResult.Failure
+}
+
+function New-TestFixture
+{
+    param(
+        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [string]
+        $Fixture,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name
+    )
+
+    Set-StrictMode -Version 'Latest'
+
+    $path = Join-Path -Path $env:TEMP -ChildPath ('{0}.ps1' -f $Name)
+    $Fixture | Set-Content -Path $path
+    return $path
 }
 
 function Assert-BladeSucceeded

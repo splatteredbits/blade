@@ -146,6 +146,7 @@ function Invoke-Test
 
     $Error.Clear()
 
+    $testPassed = $false
     try
     {
         if( Test-path function:Start-Test )
@@ -161,8 +162,7 @@ function Invoke-Test
         {
             . $function | ForEach-Object { $testInfo.Output.Add( $_ ) }
         }
-
-        $testInfo.Completed()
+        $testPassed = $true
     }
     catch [Blade.AssertionException]
     {
@@ -175,10 +175,10 @@ function Invoke-Test
     }
     finally
     {
-        $testInfo
+        $tearDownResult = New-Object 'Blade.TestResult' $fixture,$function
+        $tearDownFailed = $false
         try
         {
-            $tearDownResult = New-Object 'Blade.TestResult' $fixture,'Stop-Test'
             if( Test-Path function:Stop-Test )
             {
                 . Stop-Test | ForEach-Object { $tearDownResult.Output.Add( $_ ) }
@@ -187,11 +187,24 @@ function Invoke-Test
             {
                 . TearDown | ForEach-Object { $tearDownResult.Output.Add( $_ ) }
             }
+            $tearDownResult.Completed()
         }
         catch
         {
             $tearDownResult.Completed( $_ )
-            $tearDownResult
+            $tearDownFailed = $true
+        }
+        finally
+        {
+            if( $testPassed )
+            {
+                $testInfo.Completed()
+            }
+            $testInfo
+            if( $tearDownFailed )
+            {
+                $tearDownResult
+            }
         }
 
         $Error.Clear()

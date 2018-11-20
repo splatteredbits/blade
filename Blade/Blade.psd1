@@ -20,7 +20,7 @@
     RootModule = 'Blade.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.13.0'
+    ModuleVersion = '0.16.0'
 
     # ID used to uniquely identify this module
     GUID = '075d9444-c01b-48c3-889a-0b3490716fa2'
@@ -61,7 +61,7 @@
     RequiredModules = @()
 
     # Assemblies that must be loaded prior to importing this module
-    RequiredAssemblies = @( (Join-Path -Path $PSScriptRoot -ChildPath 'Blade.dll') )
+    RequiredAssemblies = 'Blade.dll'
 
     # Script files (.ps1) that are run in the caller's environment prior to importing this module
     ScriptsToProcess = @()

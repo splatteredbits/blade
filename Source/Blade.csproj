@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Blade</AssemblyName>
-    <Version>0.13.0</Version>
+    <Version>0.16.0</Version>
     <Authors>Aaron Jensen</Authors>
     <Company />
     <Description>Assembly for Blade, a PowerShell testing module.</Description>
